@@ -162,7 +162,8 @@ class QuestionPackManager {
         });
 
         // Cache in IndexedDB with expiration (7 days)
-        await this.cachePack(packId, packData, 'api');
+        // Include GitLab repo info for reporting
+        await this.cachePack(packId, packData, 'api', repoPath, packFile);
 
         loadedPacks.push(packData);
       } catch (error) {
@@ -450,15 +451,19 @@ class QuestionPackManager {
    * @param {string} packId - Pack identifier
    * @param {Object} packData - Pack data
    * @param {string} source - Source type ('api' or 'upload')
+   * @param {string} gitlabRepo - GitLab repository path (for API packs, optional)
+   * @param {string} gitlabFile - GitLab file path (for API packs, optional)
    */
-  async cachePack(packId, packData, source) {
+  async cachePack(packId, packData, source, gitlabRepo = null, gitlabFile = null) {
     try {
       const cacheData = {
         packId,
         packData,
         source,
         cachedAt: Date.now(),
-        expiresAt: source === 'api' ? Date.now() + (7 * 24 * 60 * 60 * 1000) : null // 7 days for API packs
+        expiresAt: source === 'api' ? Date.now() + (7 * 24 * 60 * 60 * 1000) : null, // 7 days for API packs
+        gitlabRepo: gitlabRepo || null, // Store GitLab repo info for reporting
+        gitlabFile: gitlabFile || null  // Store GitLab file path for reporting
       };
       await storageManager.saveCachedPack(packId, cacheData);
     } catch (error) {
@@ -520,7 +525,10 @@ class QuestionPackManager {
               ...packData.metadata,
               packId: cached.packId,
               packSource: cached.source,
-              enabled: storageManager.getPackPreference(cached.packId) !== false
+              enabled: storageManager.getPackPreference(cached.packId) !== false,
+              // Preserve GitLab repo info from cache for reporting
+              gitlabRepo: cached.gitlabRepo || packData.metadata?.gitlabRepo,
+              gitlabFile: cached.gitlabFile || packData.metadata?.gitlabFile
             });
           }
           // If not authenticated, skip entirely (already handled above)

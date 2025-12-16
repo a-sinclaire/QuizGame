@@ -58,7 +58,7 @@ class GitLabOAuth {
       client_id: this.oauthAppId,
       redirect_uri: redirectUri,
       response_type: 'code',
-      scope: 'read_api read_repository',
+      scope: 'api read_repository', // Full API access (includes write) + repository read access
       code_challenge: codeChallenge,
       code_challenge_method: 'S256'
     });

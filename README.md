@@ -14,7 +14,7 @@ A browser-based quiz game designed to run on GitHub Pages, serving as both an as
 - ✅ **Dark Mode**: Light and dark themes with system preference detection
 - ✅ **Sound Effects**: Audio feedback for correct/incorrect answers
 - ✅ **Share Results**: Copy formatted results to clipboard
-- ✅ **Question Reporting**: Report issues with questions (creates GitHub issues)
+- ✅ **Question Reporting**: Report issues with questions (opens GitHub/GitLab issue pages or email)
 - ✅ **Animations**: Smooth transitions and visual feedback
 - ✅ **Mobile-Friendly**: Responsive design that works on all devices
 - ✅ **Dynamic Question Packs**: Support for built-in, secure (GitLab), and custom question packs
@@ -77,8 +77,8 @@ To enable secure access to private question packs from GitLab:
    - Create a new application with:
      - Name: Quiz Game
      - Redirect URI: `https://YOUR_USERNAME.github.io/QuizGame/oauth-callback.html`
-     - Scopes: `read_api`, `read_repository`
-   - Copy the Application ID
+     - Scopes: `api`, `read_repository` (api scope required for creating issues)
+     - Copy the Application ID
 
 2. **Configure the Quiz Game**:
    - Edit `index.html`

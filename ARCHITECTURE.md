@@ -512,6 +512,9 @@ The quiz engine maintains state including:
 - **Progression Tracking**: Track which difficulties user has completed
 
 #### 17. Question Reporting ✅ IMPLEMENTED
+- ✅ **GitHub Integration**: Opens pre-filled GitHub issue page
+- ✅ **GitLab Integration**: Opens pre-filled GitLab issue page (for private packs)
+- ✅ **Email Fallback**: Generates mailto: link for packs with contactEmail
 - ✅ **Report Button**: Compact button in question header (right side, gray color for icon contrast)
 - ✅ **Report Modal**: Modal dialog displaying question text with form
 - ✅ **Report Reasons**: 

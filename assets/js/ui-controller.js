@@ -1185,12 +1185,15 @@ Breakdown:
     if (success) {
       // Determine reporting method based on pack
       const reportingInfo = this.getReportingInfo(packId, packSource);
+      console.log('[submitReport] Reporting info:', reportingInfo);
       
       if (reportingInfo.method === 'github') {
         this.createGitHubIssue(reportData);
       } else if (reportingInfo.method === 'gitlab') {
+        console.log('[submitReport] Creating GitLab issue...');
         this.createGitLabIssue(reportData, reportingInfo);
       } else if (reportingInfo.method === 'email') {
+        console.log('[submitReport] Creating email report...');
         this.createEmailReport(reportData, reportingInfo.contactEmail, reportingInfo.packName);
       } else {
         // Local storage only
@@ -1210,10 +1213,24 @@ Breakdown:
    * @returns {Object} Reporting info {method: string, contactEmail: string|null, packName: string}
    */
   getReportingInfo(packId, packSource) {
+    console.log('[getReportingInfo] Called with:', { packId, packSource });
+    
     // Try to get pack metadata if questionPackManager is available
     let packMetadata = null;
     if (window.questionPackManager) {
       packMetadata = window.questionPackManager.getPackMetadata(packId);
+      console.log('[getReportingInfo] Pack metadata:', packMetadata);
+      console.log('[getReportingInfo] gitlabRepo:', packMetadata?.gitlabRepo);
+      console.log('[getReportingInfo] gitlabFile:', packMetadata?.gitlabFile);
+      console.log('[getReportingInfo] packSource:', packMetadata?.packSource);
+      
+      // Debug: List all pack metadata to see what's available
+      if (window.questionPackManager.getAllPackMetadata) {
+        const allMetadata = window.questionPackManager.getAllPackMetadata();
+        console.log('[getReportingInfo] All pack metadata:', allMetadata);
+      }
+    } else {
+      console.warn('[getReportingInfo] questionPackManager not available!');
     }
 
     // Built-in packs: use GitHub reporting
@@ -1245,11 +1262,42 @@ Breakdown:
     
     // Secure API packs: try GitLab issue first, then email, then local storage
     if (packSource === 'api') {
-      const gitlabRepo = packMetadata?.gitlabRepo;
+      let gitlabRepo = packMetadata?.gitlabRepo;
       const gitlabUrl = window.quizConfig?.gitlab?.url;
+      
+      console.log('[getReportingInfo] Initial gitlabRepo from metadata:', gitlabRepo);
+      
+      // Fallback: if gitlabRepo is missing from metadata, try to get it from saved GitLab config
+      if (!gitlabRepo) {
+        try {
+          const savedConfig = storageManager.getGitLabConfig();
+          console.log('[getReportingInfo] Saved GitLab config:', savedConfig);
+          if (savedConfig?.repoPath) {
+            gitlabRepo = savedConfig.repoPath;
+            console.log('[getReportingInfo] Using gitlabRepo from saved config:', gitlabRepo);
+          }
+        } catch (e) {
+          console.warn('[getReportingInfo] Error getting saved config:', e);
+        }
+      }
+      
+      // Also try default repo from config if still missing
+      if (!gitlabRepo) {
+        if (window.quizConfig?.gitlab?.defaultRepo) {
+          gitlabRepo = window.quizConfig.gitlab.defaultRepo;
+          console.log('[getReportingInfo] Using gitlabRepo from default config:', gitlabRepo);
+        } else {
+          // Hardcoded fallback for known private repo
+          gitlabRepo = 'amsincla/quiz-packs-private';
+          console.log('[getReportingInfo] Using hardcoded fallback gitlabRepo:', gitlabRepo);
+        }
+      }
+      
+      console.log('[getReportingInfo] Final gitlabRepo:', gitlabRepo, 'gitlabUrl:', gitlabUrl);
       
       // If we have GitLab repo info, try to create GitLab issue
       if (gitlabRepo && gitlabUrl) {
+        console.log('[getReportingInfo] Returning GitLab reporting method');
         return {
           method: 'gitlab',
           contactEmail: packMetadata?.contactEmail || packMetadata?.metadata?.contactEmail || null,
@@ -1259,9 +1307,12 @@ Breakdown:
         };
       }
       
+      console.log('[getReportingInfo] No gitlabRepo/gitlabUrl, falling back to email');
+      
       // Fallback to email if contact email is available
       const contactEmail = packMetadata?.contactEmail || packMetadata?.metadata?.contactEmail;
       if (contactEmail) {
+        console.log('[getReportingInfo] Returning email reporting method');
         return {
           method: 'email',
           contactEmail: contactEmail,
@@ -1270,6 +1321,7 @@ Breakdown:
       }
       
       // No contact email: local storage only
+      console.log('[getReportingInfo] No email, returning none method');
       return {
         method: 'none',
         contactEmail: null,
@@ -1322,8 +1374,12 @@ This report was submitted from the quiz application.`);
 
     const mailtoUrl = `mailto:${contactEmail}?subject=${subject}&body=${body}`;
     
-    // Open email client
-    window.location.href = mailtoUrl;
+    // Open email client in new window to avoid clearing console/navigation
+    const emailWindow = window.open(mailtoUrl, '_blank');
+    if (!emailWindow) {
+      // Fallback if popup blocked
+      window.location.href = mailtoUrl;
+    }
     
     // Show confirmation
     alert(`Thank you for reporting this question! Opening email client to send report to ${contactEmail}...`);
@@ -1331,16 +1387,15 @@ This report was submitted from the quiz application.`);
 
   /**
    * Create GitLab issue for question report
+   * Opens GitLab's issue creation page with pre-filled form (like GitHub)
    * @param {Object} reportData - Report data object
    * @param {Object} reportingInfo - Reporting info with GitLab details
    */
-  async createGitLabIssue(reportData, reportingInfo) {
+  createGitLabIssue(reportData, reportingInfo) {
     const gitlabUrl = reportingInfo.gitlabUrl;
     const repoPath = reportingInfo.gitlabRepo;
     
-    // Check if user is authenticated
-    const token = sessionStorage.getItem('gitlab_oauth_token');
-    if (!token) {
+    if (!gitlabUrl || !repoPath) {
       // Fallback to email if available
       if (reportingInfo.contactEmail) {
         this.createEmailReport(reportData, reportingInfo.contactEmail, reportingInfo.packName);
@@ -1348,7 +1403,7 @@ This report was submitted from the quiz application.`);
       }
       // Otherwise just save locally
       storageManager.saveReport(reportData);
-      alert('Thank you for reporting this question! Please authenticate with GitLab to create an issue, or your feedback has been saved locally.');
+      alert('Thank you for reporting this question! GitLab repository information is missing. Your feedback has been saved locally.');
       return;
     }
     
@@ -1360,8 +1415,11 @@ This report was submitted from the quiz application.`);
       'other': 'Other issue'
     };
     
-    const title = `Question Report: ${reportData.questionId} (${reportData.difficulty})`;
-    const body = `## Question Report
+    // Format issue title
+    const title = encodeURIComponent(`Question Report: ${reportData.questionId} (${reportData.difficulty})`);
+    
+    // Format issue body
+    const body = encodeURIComponent(`## Question Report
 
 **Question ID:** ${reportData.questionId}
 **Category:** ${reportData.category || 'N/A'}
@@ -1377,39 +1435,22 @@ ${reportData.question}
 ${reportData.details || 'None provided'}
 
 ---
-*This report was submitted from the quiz application.*`;
+*This report was submitted from the quiz application.*`);
     
-    try {
-      const encodedRepoPath = encodeURIComponent(repoPath);
-      const response = await fetch(`${gitlabUrl}/api/v4/projects/${encodedRepoPath}/issues`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'PRIVATE-TOKEN': token
-        },
-        body: JSON.stringify({
-          title: title,
-          description: body,
-          labels: 'question-report'
-        })
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Failed to create GitLab issue: ${response.statusText}`);
-      }
-      
-      const issue = await response.json();
-      alert(`Thank you for reporting this question! GitLab issue #${issue.iid} has been created.\n\nView it here: ${issue.web_url}`);
-    } catch (error) {
-      console.error('Error creating GitLab issue:', error);
-      // Fallback to email if available
-      if (reportingInfo.contactEmail) {
-        this.createEmailReport(reportData, reportingInfo.contactEmail, reportingInfo.packName);
-      } else {
-        storageManager.saveReport(reportData);
-        alert(`Thank you for reporting this question! Unable to create GitLab issue: ${error.message}. Your feedback has been saved locally.`);
-      }
-    }
+    // Create GitLab issue URL
+    // GitLab path format: namespace/project (keep slashes, don't encode the whole path)
+    // Only encode individual path segments if needed, but typically namespace/project works as-is
+    const issueUrl = `${gitlabUrl}/${repoPath}/-/issues/new?issue[title]=${title}&issue[description]=${body}`;
+    
+    console.log('[createGitLabIssue] Opening URL:', issueUrl);
+    console.log('[createGitLabIssue] Repo path:', repoPath);
+    console.log('[createGitLabIssue] GitLab URL:', gitlabUrl);
+    
+    // Open in new tab (like GitHub)
+    window.open(issueUrl, '_blank');
+    
+    // Show confirmation
+    alert('Thank you for reporting this question! Opening GitLab issue page...');
   }
 
   /**
