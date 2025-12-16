@@ -20,3 +20,21 @@ npm-debug.log*
 # Python HTTP server
 .python-http-server/
 
+QUIZ_CONTENT_PLAN.md
+QUESTION_GUIDELINES.md
+REPO_RENAME_PLAN.md
+GITHUB_RENAME_STEPS.md
+QUESTION_PACKS_DESIGN.md
+REPORTING_AND_PACKS.md
+
+# App-interface specific question packs (disabled, use test-pack instead)
+assets/js/questions/categories/fundamentals.js
+assets/js/questions/categories/architecture.js
+assets/js/questions/categories/entities.js
+assets/js/questions/categories/saas-files.js
+assets/js/questions/categories/access-control.js
+assets/js/questions/categories/integrations.js
+assets/js/questions/categories/openshift.js
+assets/js/questions/categories/gitops.js
+assets/js/questions/categories/schemas.js
+assets/js/questions/categories/external-resources.js

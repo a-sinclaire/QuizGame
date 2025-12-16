@@ -3,10 +3,11 @@
 
 import { QuizEngine } from './quiz-engine.js';
 import { UIController } from './ui-controller.js';
-import { getCategories, getQuestionById } from './questions/index.js';
+import { getCategories, getQuestionById, questionRegistry } from './questions/index.js';
 import { storageManager } from './storage.js';
 import { soundManager } from './sound-manager.js';
 import { themeManager } from './theme-manager.js';
+import { questionPackManager } from './question-packs.js';
 
 class QuizApp {
   constructor() {
@@ -19,6 +20,21 @@ class QuizApp {
    * Initialize the application
    */
   init() {
+    // Make questionPackManager available globally for reporting
+    window.questionPackManager = questionPackManager;
+    
+    // Register built-in pack with question pack manager
+    questionPackManager.registerBuiltInPack(
+      'builtin-public',
+      'Public Questions',
+      questionRegistry,
+      {
+        author: 'Quiz Maintainers',
+        contactEmail: null, // Public pack, use GitHub for reporting
+        packVersion: '1.0.0'
+      }
+    );
+    
     // Initialize sound manager and load preferences
     soundManager.loadPreferences();
     

@@ -1,7 +1,7 @@
-# AppInterfaceQuiz - Project Plan & Architecture
+# Quiz Game - Project Plan & Architecture
 
 ## Overview
-A browser-based quiz game designed to run on GitHub Pages, serving as both an assessment tool and a learning resource. The game features three difficulty levels, each with detailed feedback for correct and incorrect answers.
+A browser-based quiz game designed to run on GitHub Pages, serving as both an assessment tool and a learning resource. The game features three difficulty levels, each with detailed feedback for correct and incorrect answers. The quiz is content-agnostic and supports multiple question packs.
 
 ## Feature Checklist
 
@@ -35,7 +35,7 @@ A browser-based quiz game designed to run on GitHub Pages, serving as both an as
 ## Project Structure
 
 ```
-AppInterfaceQuiz/
+QuizGame/
 ├── index.html                 # Main entry point
 ├── README.md                  # Project documentation
 ├── .gitignore                 # Git ignore rules

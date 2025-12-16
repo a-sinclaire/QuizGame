@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AppInterface Quiz</title>
+    <title>Quiz Game</title>
     <link rel="stylesheet" href="assets/css/styles.css">
     <link rel="stylesheet" href="assets/css/themes/dark.css" id="dark-theme" media="none">
     <script>
@@ -11,14 +11,14 @@
         // Update these values when deploying to GitHub Pages
         window.quizConfig = {
             repoOwner: 'a-sinclaire',  // Update this
-            repoName: 'AppInterfaceQuiz'         // Update this if different
+            repoName: 'QuizGame'         // Update this if different
         };
     </script>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>AppInterface Quiz</h1>
+            <h1>Quiz Game</h1>
             <div class="header-controls">
                 <button id="theme-toggle" class="theme-btn" title="Toggle dark mode">
                     <span id="theme-icon">🌙</span>
@@ -50,8 +50,19 @@
             <p>Select a category to begin (questions will progress from easy to hard):</p>
             <div class="category-selector">
                 <button class="category-btn" data-category="random">Random (All Categories)</button>
-                <button class="category-btn" data-category="module1">Module 1</button>
-                <!-- More categories will be added dynamically -->
+                <button class="category-btn" data-category="test-pack">Test Pack</button>
+                <!-- App-interface categories are disabled - uncomment to enable:
+                <button class="category-btn" data-category="fundamentals">Fundamentals</button>
+                <button class="category-btn" data-category="architecture">Architecture</button>
+                <button class="category-btn" data-category="entities">Entities</button>
+                <button class="category-btn" data-category="saas-files">SaaS Files</button>
+                <button class="category-btn" data-category="access-control">Access Control</button>
+                <button class="category-btn" data-category="integrations">Integrations</button>
+                <button class="category-btn" data-category="openshift">OpenShift</button>
+                <button class="category-btn" data-category="gitops">GitOps</button>
+                <button class="category-btn" data-category="schemas">Schemas</button>
+                <button class="category-btn" data-category="external-resources">External Resources</button>
+                -->
             </div>
         </div>
 

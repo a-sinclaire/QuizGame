@@ -1,19 +1,49 @@
 // Question Registry and Loader
 // Imports all question modules and provides filtering functions
 
-import { module1Questions } from './categories/module1.js';
+// App-interface specific packs are disabled - they are in .gitignore
+// Uncomment these imports if you want to use them locally:
+// import { fundamentalsQuestions } from './categories/fundamentals.js';
+// import { architectureQuestions } from './categories/architecture.js';
+// import { entitiesQuestions } from './categories/entities.js';
+// import { saasFilesQuestions } from './categories/saas-files.js';
+// import { accessControlQuestions } from './categories/access-control.js';
+// import { integrationsQuestions } from './categories/integrations.js';
+// import { openshiftQuestions } from './categories/openshift.js';
+// import { gitopsQuestions } from './categories/gitops.js';
+// import { schemasQuestions } from './categories/schemas.js';
+// import { externalResourcesQuestions } from './categories/external-resources.js';
 
-// Registry of all questions by category
+// Test pack - generic questions for testing
+import { testPackQuestions } from './categories/test-pack.js';
+
+// Registry of all questions by category (built-in pack)
+// Only test-pack is enabled by default
 export const questionRegistry = {
-  module1: module1Questions,
-  // Add more modules here as they're created
-  // module2: module2Questions,
-  // module3: module3Questions,
+  'test-pack': testPackQuestions,
+  // App-interface categories are disabled - uncomment to enable:
+  // fundamentals: fundamentalsQuestions,
+  // architecture: architectureQuestions,
+  // entities: entitiesQuestions,
+  // 'saas-files': saasFilesQuestions,
+  // 'access-control': accessControlQuestions,
+  // integrations: integrationsQuestions,
+  // openshift: openshiftQuestions,
+  // gitops: gitopsQuestions,
+  // schemas: schemasQuestions,
+  // 'external-resources': externalResourcesQuestions,
 };
+
+// Add pack metadata to all built-in questions
+// This allows pack-aware reporting
+Object.values(questionRegistry).flat().forEach(question => {
+  question.packId = 'builtin-public';
+  question.packSource = 'builtin';
+});
 
 /**
  * Get questions filtered by category and/or difficulty
- * @param {string|null} category - Category name (e.g., 'module1') or null for all
+ * @param {string|null} category - Category name (e.g., 'fundamentals') or null for all
  * @param {string|null} difficulty - 'easy', 'medium', 'hard', or null for all
  * @returns {Array} Filtered array of question objects
  */

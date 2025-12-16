@@ -1,6 +1,6 @@
-# AppInterfaceQuiz
+# Quiz Game
 
-A browser-based quiz game designed to run on GitHub Pages, serving as both an assessment tool and a learning resource.
+A browser-based quiz game designed to run on GitHub Pages, serving as both an assessment tool and a learning resource. The quiz supports multiple question packs, making it content-agnostic and customizable.
 
 ## Features
 
@@ -40,7 +40,7 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed project structure and desi
 
 1. **Create a GitHub repository** (if you haven't already):
    ```bash
-   git remote add origin https://github.com/YOUR_USERNAME/AppInterfaceQuiz.git
+   git remote add origin https://github.com/YOUR_USERNAME/QuizGame.git
    git branch -M main
    git push -u origin main
    ```
@@ -58,7 +58,7 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed project structure and desi
      ```javascript
      window.quizConfig = {
          repoOwner: 'YOUR_GITHUB_USERNAME',
-         repoName: 'AppInterfaceQuiz'
+         repoName: 'QuizGame'
      };
      ```
 
@@ -66,12 +66,12 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed project structure and desi
    - Go to repository Issues → Labels
    - Create a label called `question-report` (optional, for organization)
 
-The quiz will be available at: `https://YOUR_USERNAME.github.io/AppInterfaceQuiz/`
+The quiz will be available at: `https://YOUR_USERNAME.github.io/QuizGame/`
 
 ## Project Structure
 
 ```
-AppInterfaceQuiz/
+QuizGame/
 ├── index.html                 # Main entry point
 ├── README.md                  # This file
 ├── ARCHITECTURE.md            # Detailed architecture documentation

@@ -1089,24 +1089,150 @@ Breakdown:
     }
     const details = this.reportDetails?.value || '';
 
+    // Get pack information if available
+    const packId = question.packId || 'builtin';
+    const packSource = question.packSource || 'builtin';
+
     const reportData = {
       questionId: question.id,
       question: question.question,
       category: question.category,
       difficulty: question.difficulty,
       reason: reason,
-      details: details
+      details: details,
+      packId: packId,
+      packSource: packSource
     };
 
     const success = storageManager.saveReport(reportData);
     
     if (success) {
-      // Create GitHub issue URL with pre-filled form data
-      this.createGitHubIssue(reportData);
+      // Determine reporting method based on pack
+      const reportingInfo = this.getReportingInfo(packId, packSource);
+      
+      if (reportingInfo.method === 'github') {
+        this.createGitHubIssue(reportData);
+      } else if (reportingInfo.method === 'email') {
+        this.createEmailReport(reportData, reportingInfo.contactEmail, reportingInfo.packName);
+      } else {
+        // Local storage only
+        alert('Report saved locally. This question pack does not support external reporting.');
+      }
+      
       this.closeReportModalFunc();
     } else {
       alert('Failed to save report. Please try again.');
     }
+  }
+
+  /**
+   * Get reporting information for a pack
+   * @param {string} packId - Pack identifier
+   * @param {string} packSource - Pack source ('builtin', 'api', 'upload')
+   * @returns {Object} Reporting info {method: string, contactEmail: string|null, packName: string}
+   */
+  getReportingInfo(packId, packSource) {
+    // Try to get pack metadata if questionPackManager is available
+    let packMetadata = null;
+    if (window.questionPackManager) {
+      packMetadata = window.questionPackManager.getPackMetadata(packId);
+    }
+
+    // Built-in packs: use GitHub reporting
+    if (packSource === 'builtin') {
+      return {
+        method: 'github',
+        contactEmail: null,
+        packName: packMetadata?.packName || 'Built-in Pack'
+      };
+    }
+    
+    // Custom uploaded packs: check for contact email
+    if (packSource === 'upload') {
+      const contactEmail = packMetadata?.contactEmail || packMetadata?.metadata?.contactEmail;
+      if (contactEmail) {
+        return {
+          method: 'email',
+          contactEmail: contactEmail,
+          packName: packMetadata?.packName || packMetadata?.metadata?.packName || 'Custom Pack'
+        };
+      }
+      // No contact email: local storage only
+      return {
+        method: 'none',
+        contactEmail: null,
+        packName: packMetadata?.packName || 'Custom Pack'
+      };
+    }
+    
+    // Secure API packs: check for contact email
+    if (packSource === 'api') {
+      const contactEmail = packMetadata?.contactEmail || packMetadata?.metadata?.contactEmail;
+      if (contactEmail) {
+        return {
+          method: 'email',
+          contactEmail: contactEmail,
+          packName: packMetadata?.packName || packMetadata?.metadata?.packName || 'Internal Pack'
+        };
+      }
+      // No contact email: local storage only
+      return {
+        method: 'none',
+        contactEmail: null,
+        packName: packMetadata?.packName || 'Internal Pack'
+      };
+    }
+    
+    // Default: GitHub reporting (backwards compatible)
+    return {
+      method: 'github',
+      contactEmail: null,
+      packName: 'Unknown Pack'
+    };
+  }
+
+  /**
+   * Create email report for non-public question packs
+   * @param {Object} reportData - Report data object
+   * @param {string} contactEmail - Contact email address
+   * @param {string} packName - Pack name
+   */
+  createEmailReport(reportData, contactEmail, packName) {
+    const reasonLabels = {
+      'incorrect': 'Question or answer is incorrect',
+      'unclear': 'Question is unclear or confusing',
+      'explanation': 'Explanation is confusing or wrong',
+      'typo': 'Typo or grammar error',
+      'other': 'Other issue'
+    };
+
+    const subject = encodeURIComponent(`Question Report: ${reportData.questionId} (${reportData.difficulty})`);
+    
+    const body = encodeURIComponent(`Hello,
+
+I'm reporting an issue with a question from the "${packName}" question pack.
+
+Question ID: ${reportData.questionId}
+Category: ${reportData.category || 'N/A'}
+Difficulty: ${reportData.difficulty}
+Reason: ${reasonLabels[reportData.reason] || reportData.reason}
+
+Question Text:
+${reportData.question}
+
+Additional Details:
+${reportData.details || 'None provided'}
+
+---
+This report was submitted from the quiz application.`);
+
+    const mailtoUrl = `mailto:${contactEmail}?subject=${subject}&body=${body}`;
+    
+    // Open email client
+    window.location.href = mailtoUrl;
+    
+    // Show confirmation
+    alert(`Thank you for reporting this question! Opening email client to send report to ${contactEmail}...`);
   }
 
   /**
@@ -1136,12 +1262,17 @@ Breakdown:
       'other': 'Other issue'
     };
     
+    // Include pack info if available (but only for built-in packs)
+    const packInfo = reportData.packSource === 'builtin' && reportData.packId 
+      ? `**Question Pack:** ${reportData.packId}\n` 
+      : '';
+    
     const body = encodeURIComponent(`## Question Report
 
 **Question ID:** ${reportData.questionId}
 **Category:** ${reportData.category || 'N/A'}
 **Difficulty:** ${reportData.difficulty}
-**Reason:** ${reasonLabels[reportData.reason] || reportData.reason}
+${packInfo}**Reason:** ${reasonLabels[reportData.reason] || reportData.reason}
 
 **Question Text:**
 ${reportData.question}
