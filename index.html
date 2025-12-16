@@ -14,6 +14,9 @@
             repoName: 'QuizGame',         // Update this if different
             gitlab: {
                 url: 'https://gitlab.cee.redhat.com',
+                // OAuth Application ID - PUBLIC (safe to commit to git)
+                // This is NOT a secret - OAuth App IDs are meant to be public identifiers
+                // Security is provided by: redirect URI validation + PKCE (no client secret needed)
                 oauthAppId: '385c5844bf2fc8a93b21871ba933f468fe6a2e51b6fc2b3dd02c72b085af77c8',
                 defaultRepo: 'amsincla/quiz-packs-private'  // Default repository path
             }

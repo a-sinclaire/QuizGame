@@ -114,11 +114,12 @@ class QuestionPackManager {
         const encodedFilePath = encodeURIComponent(packFile);
         
         // GitLab API endpoint for raw file content
-        const fileUrl = `${gitlabUrl}/api/v4/projects/${encodedRepoPath}/repository/files/${encodedFilePath}/raw`;
+        // Note: /raw endpoint returns text content, not JSON
+        const fileUrl = `${gitlabUrl}/api/v4/projects/${encodedRepoPath}/repository/files/${encodedFilePath}/raw?ref=main`;
         
         const response = await fetch(fileUrl, {
           headers: {
-            'PRIVATE-TOKEN': token
+            'Authorization': `Bearer ${token}` // Use Bearer token for OAuth (PRIVATE-TOKEN is for PATs)
           }
         });
 
@@ -126,13 +127,23 @@ class QuestionPackManager {
           if (response.status === 401) {
             throw new Error(`Unauthorized: Invalid GitLab token or insufficient permissions for ${packFile}`);
           }
+          if (response.status === 403) {
+            throw new Error(`Forbidden: Insufficient permissions to access ${packFile}`);
+          }
           if (response.status === 404) {
             throw new Error(`Not found: Pack file ${packFile} not found in repository or you don't have access`);
           }
           throw new Error(`Failed to load pack ${packFile}: ${response.status} ${response.statusText}`);
         }
 
-        const packData = await response.json();
+        // /raw endpoint returns text content, need to parse as JSON
+        const textContent = await response.text();
+        let packData;
+        try {
+          packData = JSON.parse(textContent);
+        } catch (parseError) {
+          throw new Error(`Invalid JSON in pack file ${packFile}: ${parseError.message}`);
+        }
         this.validatePackStructure(packData);
         
         const packId = packData.packId || `gitlab-${Date.now()}`;

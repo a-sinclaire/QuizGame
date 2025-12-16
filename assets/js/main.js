@@ -689,20 +689,26 @@ class QuizApp {
     const repoPath = savedConfig?.repoPath || gitlabConfig.defaultRepo || 'amsincla/quiz-packs-private';
     const packFiles = savedConfig?.packFiles || ['packs/internal-basic-v1.json'];
     
+    console.log('[autoLoadPacks] Starting auto-load for:', { repoPath, packFiles });
+    
     try {
       const token = oauth.getStoredToken();
       if (!token) {
+        console.log('[autoLoadPacks] No token available, loading cached packs only');
         // No token, but try to load cached packs anyway
         await questionPackManager.loadCachedPacks();
+        this.updateCategorySelector();
         return;
       }
+      
+      console.log('[autoLoadPacks] Token available, checking cache...');
       
       // Check if packs are already cached and loaded
       const cachedPacks = await storageManager.getCachedPacks();
       const allPacksCached = packFiles.every(packFile => {
         // Check if any cached pack matches this file
         for (const [packId, cached] of Object.entries(cachedPacks)) {
-          if (cached.gitlabFile === packFile || cached.packData?.metadata?.packId) {
+          if (cached.gitlabFile === packFile || cached.packData?.packId) {
             const metadata = questionPackManager.getPackMetadata(packId);
             return metadata && questionPackManager.securePacks.has(packId);
           }
@@ -712,11 +718,14 @@ class QuizApp {
       
       // If packs are already cached and loaded, skip fetching
       if (allPacksCached) {
-        console.log('Packs already cached and loaded, skipping auto-load');
+        console.log('[autoLoadPacks] Packs already cached and loaded, skipping fetch');
         await questionPackManager.loadCachedPacks(); // Ensure they're available
         this.updateCategorySelector();
+        this.showGitLabStatus('✅ Secure packs loaded from cache!', 'success');
         return;
       }
+      
+      console.log('[autoLoadPacks] Fetching packs from GitLab...');
       
       // Try to fetch from GitLab (might fail if token expired, but cached packs will still work)
       try {
@@ -726,28 +735,49 @@ class QuizApp {
           token,
           packFiles
         );
+        console.log('[autoLoadPacks] Successfully fetched packs from GitLab');
+        // After successful fetch, reload cached packs to ensure all are properly registered
+        await questionPackManager.loadCachedPacks();
+        this.updateCategorySelector();
         this.showGitLabStatus('✅ Packs loaded automatically!', 'success');
       } catch (fetchError) {
+        console.error('[autoLoadPacks] Error fetching from GitLab:', fetchError);
         // Token might be expired, but cached packs should still work
-        // Only log if it's not a 401/403 (Unauthorized) - those are expected when token expires
-        if (!fetchError.message.includes('Unauthorized') && !fetchError.message.includes('403')) {
-          console.warn('Could not fetch packs from GitLab (using cached packs):', fetchError.message);
+        // Always try to load cached packs even if fetch failed
+        try {
+          await questionPackManager.loadCachedPacks();
+          this.updateCategorySelector();
+          
+          // Check if we have any secure packs loaded
+          const mergedQuestions = questionPackManager.getMergedQuestions();
+          const secureCategories = Object.keys(mergedQuestions).filter(cat => {
+            const questions = mergedQuestions[cat] || [];
+            if (questions.length === 0) return false;
+            const packId = questions[0].packId;
+            const pack = questionPackManager.getPackMetadata(packId);
+            return pack && pack.packSource === 'api';
+          });
+          
+          if (secureCategories.length === 0) {
+            // No secure packs loaded - show error
+            this.showGitLabStatus(`⚠️ Could not load secure packs: ${fetchError.message}. Please try authenticating again.`, 'warning');
+          } else {
+            // Have cached packs - show warning
+            this.showGitLabStatus('⚠️ Using cached secure packs. Some packs may be outdated.', 'warning');
+          }
+        } catch (cacheError) {
+          console.error('[autoLoadPacks] Error loading cached packs:', cacheError);
+          this.showGitLabStatus(`❌ Error loading packs: ${fetchError.message}`, 'error');
         }
-        // Don't show error to user - cached packs are still available
       }
-      
-      // Always reload cached packs to ensure they're available
-      await questionPackManager.loadCachedPacks();
-      
-      this.updateCategorySelector();
     } catch (error) {
-      console.error('Error auto-loading packs:', error);
+      console.error('[autoLoadPacks] Unexpected error:', error);
       // Try to load cached packs anyway
       try {
         await questionPackManager.loadCachedPacks();
         this.updateCategorySelector();
       } catch (cacheError) {
-        console.error('Error loading cached packs:', cacheError);
+        console.error('[autoLoadPacks] Error loading cached packs:', cacheError);
       }
     }
   }
