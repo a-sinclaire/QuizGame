@@ -490,16 +490,20 @@ The quiz engine maintains state including:
 - **Adaptive Difficulty**: Option to adjust difficulty mid-quiz (future)
 - **Progression Tracking**: Track which difficulties user has completed
 
-#### 17. Question Reporting ❌ NOT IMPLEMENTED
-- **Report Button**: "Report Question" button on each question
-- **Report Reasons**: 
-  - Question is incorrect/unclear
-  - Answer is wrong
-  - Explanation is confusing
-  - Typo/grammar error
-- **Report Storage**: Store reports in localStorage
-- **Report Export**: Export reports for review
-- **GitHub Integration**: Future: Create GitHub issue automatically (requires auth)
+#### 17. Question Reporting ✅ IMPLEMENTED
+- ✅ **Report Button**: Compact button in question header (right side, gray color for icon contrast)
+- ✅ **Report Modal**: Modal dialog displaying question text with form
+- ✅ **Report Reasons**: 
+  - Question or answer is incorrect
+  - Question is unclear or confusing
+  - Explanation is confusing or wrong
+  - Typo or grammar error
+  - Other issue
+- ✅ **Report Storage**: Store reports in localStorage with metadata (question ID, category, difficulty, reason, details, timestamp)
+- ✅ **Report Export**: Export all reports as JSON to clipboard via button on results screen
+- ✅ **UI Integration**: Button only visible during quiz, hidden on start screen
+- ✅ **Responsive Design**: Button stacks below question on mobile
+- ⏳ **GitHub Integration**: Future: Create GitHub issue automatically (requires auth)
 
 #### 18. Scoreboard (Opt-In Leaderboard) ❌ NOT IMPLEMENTED
 - **Opt-In Sharing**: Users explicitly choose to share their score
