@@ -30,6 +30,15 @@
         <!-- Start Screen -->
         <div id="start-screen" class="screen active">
             <h2>Welcome to the Quiz!</h2>
+            <div id="resume-quiz-container" class="resume-quiz-container" style="display: none;">
+                <div class="resume-quiz-banner">
+                    <p>📚 You have an incomplete quiz. Would you like to resume?</p>
+                    <div class="resume-actions">
+                        <button id="resume-quiz-btn" class="action-btn resume-btn">Resume Quiz</button>
+                        <button id="dismiss-resume-btn" class="action-btn dismiss-btn">Start New Quiz</button>
+                    </div>
+                </div>
+            </div>
             <p>Select a category to begin (questions will progress from easy to hard):</p>
             <div class="category-selector">
                 <button class="category-btn" data-category="random">Random (All Categories)</button>

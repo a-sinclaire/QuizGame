@@ -53,6 +53,29 @@ export function getDifficulties() {
 }
 
 /**
+ * Get a question by its ID
+ * @param {string} questionId - Question ID
+ * @param {string} category - Category name
+ * @param {string} difficulty - Difficulty level
+ * @returns {Object|null} Question object or null if not found
+ */
+export function getQuestionById(questionId, category, difficulty) {
+  let questions = [];
+  
+  if (category) {
+    questions = questionRegistry[category] || [];
+  } else {
+    questions = Object.values(questionRegistry).flat();
+  }
+  
+  if (difficulty) {
+    questions = questions.filter(q => q.difficulty === difficulty);
+  }
+  
+  return questions.find(q => q.id === questionId) || null;
+}
+
+/**
  * Shuffle array using Fisher-Yates algorithm
  * @param {Array} array - Array to shuffle
  * @returns {Array} New shuffled array

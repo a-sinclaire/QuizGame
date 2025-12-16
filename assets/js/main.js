@@ -3,7 +3,7 @@
 
 import { QuizEngine } from './quiz-engine.js';
 import { UIController } from './ui-controller.js';
-import { getCategories } from './questions/index.js';
+import { getCategories, getQuestionById } from './questions/index.js';
 import { storageManager } from './storage.js';
 import { soundManager } from './sound-manager.js';
 import { themeManager } from './theme-manager.js';
@@ -59,6 +59,9 @@ class QuizApp {
     // Populate category buttons dynamically
     this.populateCategories();
 
+    // Check for incomplete quiz and show resume option
+    this.checkForIncompleteQuiz();
+
     // Show start screen
     this.uiController.renderStartScreen();
   }
@@ -107,13 +110,148 @@ class QuizApp {
    */
   startQuiz(category) {
     try {
+      // Clear any incomplete quiz when starting new
+      storageManager.clearIncompleteQuiz();
+      
       const questionCount = this.quizEngine.startQuiz(category, true, true);
       console.log(`Started quiz with ${questionCount} questions from category: ${category || 'all'}`);
+      
+      // Hide resume banner and show category selector
+      const resumeContainer = document.getElementById('resume-quiz-container');
+      const categorySelector = document.querySelector('.category-selector');
+      const welcomeText = document.querySelector('#start-screen > p');
+      
+      if (resumeContainer) {
+        resumeContainer.style.display = 'none';
+      }
+      if (categorySelector) {
+        categorySelector.style.display = 'flex';
+      }
+      if (welcomeText) {
+        welcomeText.style.display = 'block';
+      }
+      
       this.uiController.renderQuizScreen();
+      this.saveQuizState(); // Save initial state
     } catch (error) {
       console.error('Error starting quiz:', error);
       alert(`Error: ${error.message}`);
     }
+  }
+
+  /**
+   * Resume incomplete quiz
+   */
+  resumeQuiz() {
+    const savedState = storageManager.getIncompleteQuiz();
+    if (!savedState) {
+      console.warn('No incomplete quiz found');
+      return;
+    }
+
+    try {
+      // Restore quiz state
+      this.quizEngine.restoreState(savedState, getQuestionById);
+      console.log('Resumed quiz from question', this.quizEngine.currentQuestionIndex + 1);
+      
+      // Hide resume banner and show category selector (for when they come back)
+      const resumeContainer = document.getElementById('resume-quiz-container');
+      const categorySelector = document.querySelector('.category-selector');
+      const welcomeText = document.querySelector('#start-screen > p');
+      
+      if (resumeContainer) {
+        resumeContainer.style.display = 'none';
+      }
+      if (categorySelector) {
+        categorySelector.style.display = 'flex';
+      }
+      if (welcomeText) {
+        welcomeText.style.display = 'block';
+      }
+      
+      // Show quiz screen
+      this.uiController.renderQuizScreen();
+    } catch (error) {
+      console.error('Error resuming quiz:', error);
+      alert('Error resuming quiz. Starting a new quiz instead.');
+      storageManager.clearIncompleteQuiz();
+      this.uiController.renderStartScreen();
+    }
+  }
+
+  /**
+   * Check for incomplete quiz and show resume option
+   */
+  checkForIncompleteQuiz() {
+    const savedState = storageManager.getIncompleteQuiz();
+    const categorySelector = document.querySelector('.category-selector');
+    const welcomeText = document.querySelector('#start-screen > p');
+    
+    if (savedState) {
+      // Show resume banner
+      const resumeContainer = document.getElementById('resume-quiz-container');
+      if (resumeContainer) {
+        resumeContainer.style.display = 'block';
+      }
+      
+      // Hide category selector and welcome text
+      if (categorySelector) {
+        categorySelector.style.display = 'none';
+      }
+      if (welcomeText) {
+        welcomeText.style.display = 'none';
+      }
+      
+      // Set up resume button
+      const resumeBtn = document.getElementById('resume-quiz-btn');
+      const dismissBtn = document.getElementById('dismiss-resume-btn');
+      
+      if (resumeBtn) {
+        resumeBtn.onclick = () => {
+          this.resumeQuiz();
+        };
+      }
+      
+      if (dismissBtn) {
+        dismissBtn.onclick = () => {
+          storageManager.clearIncompleteQuiz();
+          resumeContainer.style.display = 'none';
+          // Show category selector and welcome text
+          if (categorySelector) {
+            categorySelector.style.display = 'flex';
+          }
+          if (welcomeText) {
+            welcomeText.style.display = 'block';
+          }
+        };
+      }
+    } else {
+      // No incomplete quiz - ensure category selector is visible
+      if (categorySelector) {
+        categorySelector.style.display = 'flex';
+      }
+      if (welcomeText) {
+        welcomeText.style.display = 'block';
+      }
+    }
+  }
+
+  /**
+   * Save current quiz state
+   */
+  saveQuizState() {
+    if (!storageManager.isAvailable()) {
+      return;
+    }
+
+    // Don't save if quiz is complete
+    if (this.quizEngine.isComplete()) {
+      storageManager.clearIncompleteQuiz();
+      return;
+    }
+
+    const state = this.quizEngine.exportState();
+    storageManager.saveIncompleteQuiz(state);
   }
 
   /**
@@ -124,8 +262,10 @@ class QuizApp {
     
     if (hasMore) {
       this.uiController.renderQuizScreen();
+      this.saveQuizState(); // Save state after each question
     } else {
-      // Quiz complete - save results and show results screen
+      // Quiz complete - clear incomplete quiz and save results
+      storageManager.clearIncompleteQuiz();
       this.saveQuizResults();
       this.uiController.showResults();
     }

@@ -278,5 +278,58 @@ export class QuizEngine {
   isComplete() {
     return this.currentQuestionIndex >= this.questions.length;
   }
+
+  /**
+   * Export current quiz state for saving
+   * @returns {Object} Quiz state object
+   */
+  exportState() {
+    return {
+      questions: this.questions.map(q => ({
+        id: q.id,
+        category: q.category,
+        difficulty: q.difficulty
+      })),
+      currentQuestionIndex: this.currentQuestionIndex,
+      score: this.score,
+      totalPoints: this.totalPoints,
+      correctCount: this.correctCount,
+      answers: this.answers,
+      difficulty: this.difficulty,
+      category: this.category,
+      hintsUsed: this.hintsUsed,
+      startTime: this.startTime,
+      timestamp: Date.now()
+    };
+  }
+
+  /**
+   * Restore quiz state from saved data
+   * @param {Object} savedState - Saved quiz state
+   * @param {Function} getQuestionById - Function to get full question by ID
+   */
+  restoreState(savedState, getQuestionById) {
+    // Restore basic state
+    this.currentQuestionIndex = savedState.currentQuestionIndex || 0;
+    this.score = savedState.score || 0;
+    this.totalPoints = savedState.totalPoints || 0;
+    this.correctCount = savedState.correctCount || 0;
+    this.answers = savedState.answers || [];
+    this.difficulty = savedState.difficulty || null;
+    this.category = savedState.category || null;
+    this.hintsUsed = savedState.hintsUsed || {};
+    this.startTime = savedState.startTime || null;
+
+    // Restore full question objects
+    this.questions = [];
+    if (savedState.questions && Array.isArray(savedState.questions)) {
+      for (const qRef of savedState.questions) {
+        const fullQuestion = getQuestionById(qRef.id, qRef.category, qRef.difficulty);
+        if (fullQuestion) {
+          this.questions.push(fullQuestion);
+        }
+      }
+    }
+  }
 }
 
