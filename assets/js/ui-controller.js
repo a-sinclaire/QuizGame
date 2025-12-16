@@ -17,11 +17,12 @@ export class UIController {
     this.resultsScreen = document.getElementById('results-screen');
 
     // Start screen
-    this.difficultyButtons = document.querySelectorAll('.difficulty-btn');
+    this.categoryButtons = document.querySelectorAll('.category-btn');
 
     // Quiz screen
     this.questionCounter = document.getElementById('question-counter');
     this.progressFill = document.getElementById('progress-fill');
+    this.difficultyBadge = document.getElementById('difficulty-badge');
     this.currentScore = document.getElementById('current-score');
     this.questionText = document.getElementById('question-text');
     this.optionsContainer = document.getElementById('options-container');
@@ -164,6 +165,13 @@ export class UIController {
     const progress = this.quizEngine.getProgress();
     this.questionCounter.textContent = `Question ${progress.current} of ${progress.total}`;
     this.progressFill.style.width = `${progress.percentage}%`;
+    
+    // Update difficulty badge
+    const question = this.quizEngine.getCurrentQuestion();
+    if (question && this.difficultyBadge) {
+      this.difficultyBadge.textContent = question.difficulty;
+      this.difficultyBadge.className = `difficulty-badge ${question.difficulty}`;
+    }
   }
 
   /**
@@ -215,13 +223,13 @@ export class UIController {
    * Set up event listeners
    */
   setupEventListeners() {
-    // Difficulty selection
-    this.difficultyButtons.forEach(btn => {
+    // Category selection
+    this.categoryButtons.forEach(btn => {
       btn.addEventListener('click', (e) => {
-        const difficulty = e.target.dataset.difficulty;
+        const category = e.target.dataset.category;
         // This will be handled by main.js
-        if (this.onDifficultySelected) {
-          this.onDifficultySelected(difficulty);
+        if (this.onCategorySelected) {
+          this.onCategorySelected(category);
         }
       });
     });

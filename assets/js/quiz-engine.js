@@ -25,27 +25,46 @@ export class QuizEngine {
   }
 
   /**
-   * Start a new quiz
-   * @param {string} difficulty - 'easy', 'medium', or 'hard'
-   * @param {string|null} category - Category name or null for all
-   * @param {boolean} shuffleQuestions - Whether to shuffle questions
+   * Start a new quiz with automatic difficulty progression
+   * @param {string|null} category - Category name, 'random' for all categories, or null for all
+   * @param {boolean} shuffleQuestions - Whether to shuffle questions within each difficulty
    * @param {boolean} shuffleOptions - Whether to shuffle answer options
    */
-  startQuiz(difficulty, category = null, shuffleQuestions = true, shuffleOptions = true) {
+  startQuiz(category = null, shuffleQuestions = true, shuffleOptions = true) {
     this.reset();
-    this.difficulty = difficulty;
-    this.category = category;
     
-    // Get questions
-    let questions = getQuestions(category, difficulty);
-    
-    if (questions.length === 0) {
-      throw new Error(`No questions found for difficulty: ${difficulty}, category: ${category}`);
+    // Handle 'random' category as null (all categories)
+    if (category === 'random') {
+      category = null;
     }
     
-    // Shuffle questions if requested
+    this.category = category;
+    
+    // Get questions from all difficulty levels for the selected category
+    const easyQuestions = getQuestions(category, 'easy');
+    const mediumQuestions = getQuestions(category, 'medium');
+    const hardQuestions = getQuestions(category, 'hard');
+    
+    // Combine questions in progression order: easy -> medium -> hard
+    let questions = [];
+    
+    // Shuffle within each difficulty level if requested
     if (shuffleQuestions) {
-      questions = shuffleArray(questions);
+      questions = [
+        ...shuffleArray(easyQuestions),
+        ...shuffleArray(mediumQuestions),
+        ...shuffleArray(hardQuestions)
+      ];
+    } else {
+      questions = [
+        ...easyQuestions,
+        ...mediumQuestions,
+        ...hardQuestions
+      ];
+    }
+    
+    if (questions.length === 0) {
+      throw new Error(`No questions found for category: ${category}`);
     }
     
     // Shuffle options for each question if requested
@@ -97,7 +116,10 @@ export class QuizEngine {
     if (this.currentQuestionIndex >= this.questions.length) {
       return null;
     }
-    return this.questions[this.currentQuestionIndex];
+    const question = this.questions[this.currentQuestionIndex];
+    // Update current difficulty based on current question
+    this.difficulty = question.difficulty;
+    return question;
   }
 
   /**
