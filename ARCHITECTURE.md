@@ -5,26 +5,31 @@ A browser-based quiz game designed to run on GitHub Pages, serving as both an as
 
 ## Feature Checklist
 
-### Core Features ✅
+### ✅ Implemented Features
 - [x] Score display and tracking (with points per question/difficulty)
 - [x] Progress indicator (question counter + progress bar)
 - [x] Question randomization (shuffle questions and options)
-- [x] Review/Results screen (summary with explanations)
-- [x] Visual feedback (colors, icons, animations)
+- [x] Review/Results screen (summary with explanations, breakdown by difficulty)
+- [x] Visual feedback (colors, icons for correct/incorrect)
 - [x] Hints system (progressive hints per question)
-- [x] Review mode (study mode with correct answers visible)
-- [x] Local storage (save/resume progress, high scores)
-- [x] Reset button (clear saved data)
-- [x] Mobile-friendly design (responsive, touch-friendly)
-- [x] Sound effects (correct/incorrect/timer sounds)
-- [x] Dark mode and themes (light/dark with persistence)
-- [x] Animations (transitions, reveals, score updates)
-- [x] Categories/Modules (organize questions by module/section)
-- [x] Share results (copy to clipboard)
-- [x] Difficulty progression (unlock system, recommendations)
-- [x] Question reporting (report incorrect/unclear questions)
-- [x] Analytics collection (aggregate user data - GitHub Actions approach)
-- [x] Scoreboard (opt-in sharing with custom names)
+- [x] Review mode (study mode with correct answers visible, shows user selections)
+- [x] Local storage (high scores, statistics tracking)
+- [x] Reset button (clear saved data with confirmation)
+- [x] Categories/Modules (organize questions by module/section, category selection)
+- [x] Difficulty progression (automatic progression easy → medium → hard)
+- [x] Basic responsive design (mobile-friendly layout)
+
+### ⏳ Partially Implemented
+- [ ] Animations (basic CSS transitions exist, but not all planned animations)
+- [ ] Mobile-friendly design (responsive layout done, but no swipe gestures)
+
+### ❌ Not Yet Implemented
+- [ ] Dark mode and themes (light/dark with persistence)
+- [ ] Share results (copy to clipboard)
+- [ ] Question reporting (report incorrect/unclear questions)
+- [ ] Analytics collection (aggregate user data - GitHub Actions approach)
+- [ ] Scoreboard (opt-in sharing with custom names)
+- [ ] Save/resume incomplete quiz state
 
 ## Project Structure
 
@@ -322,7 +327,9 @@ The quiz engine maintains state including:
 
 ## Feature Specifications
 
-### ✅ Core Features (To Be Implemented)
+### Feature Implementation Status
+
+#### ✅ Fully Implemented
 
 #### 1. Score Display & Tracking
 - **Current Score**: Display running total of points earned
@@ -438,16 +445,17 @@ The quiz engine maintains state including:
 - **Viewport Optimization**: Proper meta tags, no horizontal scroll
 - **Performance**: Optimized for slower mobile connections
 
-#### 11. Sound Effects
-- **Correct Answer Sound**: Play on correct answer
-- **Incorrect Answer Sound**: Play on incorrect answer
-- **Timer Warning**: Sound when time is running low (if timer enabled)
-- **Volume Control**: Slider to adjust volume
-- **Mute Toggle**: Quick mute/unmute button
-- **Sound Manager**: `sound-manager.js` handles all audio
-- **Preload**: Preload sounds for instant playback
+#### 11. Sound Effects ✅ IMPLEMENTED
+- ✅ **Correct Answer Sound**: Play pleasant ascending tones on correct answer
+- ✅ **Incorrect Answer Sound**: Play low descending tones on incorrect answer
+- ⏳ **Timer Warning**: Sound when time is running low (if timer enabled) - Not yet implemented
+- ✅ **Volume Control**: Slider to adjust volume (0-100%) with percentage display
+- ✅ **Mute Toggle**: Quick mute/unmute button with visual indicator
+- ✅ **Sound Manager**: `sound-manager.js` handles all audio using Web Audio API
+- ✅ **Persistent Preferences**: Volume and mute state saved in localStorage
+- ✅ **Browser Compatibility**: Audio context initialized on first user interaction (required by browsers)
 
-#### 12. Dark Mode & Themes
+#### 12. Dark Mode & Themes ❌ NOT IMPLEMENTED
 - **Dark Theme**: Full dark mode with proper contrast
 - **Light Theme**: Default light theme
 - **Theme Toggle**: Easy switch between themes
@@ -455,13 +463,13 @@ The quiz engine maintains state including:
 - **System Preference**: Option to follow OS theme preference
 - **Custom Themes**: Structure allows for additional themes (future)
 
-#### 13. Animations
-- **Question Transitions**: Smooth fade/slide between questions
-- **Answer Reveal**: Animated reveal of correct answer
-- **Score Updates**: Animated score counter
-- **Progress Bar**: Smooth progress bar animation
-- **Button Hover**: Subtle hover effects
-- **Loading States**: Spinner/loading animation for data loading
+#### 13. Animations ⏳ PARTIALLY IMPLEMENTED
+- ✅ **Progress Bar**: Smooth progress bar animation (CSS transition)
+- ✅ **Button Hover**: Subtle hover effects
+- ❌ **Question Transitions**: Smooth fade/slide between questions
+- ❌ **Answer Reveal**: Animated reveal of correct answer
+- ❌ **Score Updates**: Animated score counter
+- ❌ **Loading States**: Spinner/loading animation for data loading
 - **CSS Animations**: Use CSS keyframes for performance
 
 #### 14. Categories/Modules
@@ -472,7 +480,7 @@ The quiz engine maintains state including:
 - **Category Metadata**: Display names, descriptions, icons
 - See "Category/Module Structure" section above for implementation details
 
-#### 15. Share Results
+#### 15. Share Results ❌ NOT IMPLEMENTED
 - **Copy to Clipboard**: Button to copy results as text
 - **Share Format**: 
   ```
@@ -490,7 +498,7 @@ The quiz engine maintains state including:
 - **Adaptive Difficulty**: Option to adjust difficulty mid-quiz (future)
 - **Progression Tracking**: Track which difficulties user has completed
 
-#### 17. Question Reporting
+#### 17. Question Reporting ❌ NOT IMPLEMENTED
 - **Report Button**: "Report Question" button on each question
 - **Report Reasons**: 
   - Question is incorrect/unclear
@@ -501,7 +509,7 @@ The quiz engine maintains state including:
 - **Report Export**: Export reports for review
 - **GitHub Integration**: Future: Create GitHub issue automatically (requires auth)
 
-#### 18. Scoreboard (Opt-In Leaderboard)
+#### 18. Scoreboard (Opt-In Leaderboard) ❌ NOT IMPLEMENTED
 - **Opt-In Sharing**: Users explicitly choose to share their score
 - **Custom Names**: Users can enter any name (no authentication required)
 - **Privacy First**: Only shared if user explicitly opts in after quiz completion

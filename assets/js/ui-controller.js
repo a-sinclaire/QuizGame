@@ -1,5 +1,7 @@
 // UI Controller - Handles rendering and user interactions
 
+import { soundManager } from './sound-manager.js';
+
 export class UIController {
   constructor(quizEngine) {
     this.quizEngine = quizEngine;
@@ -47,6 +49,12 @@ export class UIController {
     this.restartBtn = document.getElementById('restart-btn');
     this.reviewBtn = document.getElementById('review-btn');
     this.resetBtn = document.getElementById('reset-btn');
+
+    // Sound controls
+    this.muteBtn = document.getElementById('mute-btn');
+    this.muteIcon = document.getElementById('mute-icon');
+    this.volumeSlider = document.getElementById('volume-slider');
+    this.volumeDisplay = document.getElementById('volume-display');
 
     // Review screen
     this.reviewScreen = document.getElementById('review-screen');
@@ -198,6 +206,13 @@ export class UIController {
 
     this.answerSelected = true;
     const result = this.quizEngine.submitAnswer(index);
+
+    // Play sound effect
+    if (result.isCorrect) {
+      soundManager.playCorrect();
+    } else {
+      soundManager.playIncorrect();
+    }
 
     // Disable all option buttons
     const optionButtons = this.optionsContainer.querySelectorAll('.option-btn');
@@ -403,6 +418,46 @@ export class UIController {
 
     // Hint button
     this.hintBtn.addEventListener('click', () => this.handleHintClick());
+
+    // Sound controls - clone to remove old listeners
+    if (this.muteBtn) {
+      const muteBtnClone = this.muteBtn.cloneNode(true);
+      this.muteBtn.parentNode.replaceChild(muteBtnClone, this.muteBtn);
+      this.muteBtn = muteBtnClone;
+      // Update icon reference
+      this.muteIcon = this.muteBtn.querySelector('#mute-icon');
+      
+      this.muteBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const muted = soundManager.toggleMute();
+        console.log('Mute toggled:', muted);
+        this.updateMuteIcon(muted);
+      });
+    }
+    
+    if (this.volumeSlider) {
+      // Clone volume slider to remove old listeners
+      const volumeSliderClone = this.volumeSlider.cloneNode(true);
+      this.volumeSlider.parentNode.replaceChild(volumeSliderClone, this.volumeSlider);
+      this.volumeSlider = volumeSliderClone;
+      
+      this.volumeSlider.addEventListener('input', (e) => {
+        const volume = e.target.value / 100;
+        soundManager.setVolume(volume);
+        if (this.updateVolumeDisplay) {
+          this.updateVolumeDisplay(volume);
+        }
+      });
+      
+      // Set initial volume from preferences
+      const initialVolume = soundManager.getVolume();
+      this.volumeSlider.value = initialVolume * 100;
+      if (this.updateVolumeDisplay) {
+        this.updateVolumeDisplay(initialVolume);
+      }
+      this.updateMuteIcon(soundManager.isMuted());
+    }
 
     // Next button listener will be set up in renderQuizScreen to avoid duplicates
 
@@ -699,6 +754,27 @@ export class UIController {
     if (this.currentReviewIndex < this.reviewQuestions.length - 1) {
       this.currentReviewIndex++;
       this.renderReviewQuestion();
+    }
+  }
+
+  /**
+   * Update mute icon based on mute state
+   * @param {boolean} muted - Muted state
+   */
+  updateMuteIcon(muted) {
+    if (this.muteIcon) {
+      this.muteIcon.textContent = muted ? '🔇' : '🔊';
+      console.log('Mute icon updated:', muted ? 'muted' : 'unmuted');
+    }
+  }
+
+  /**
+   * Update volume display
+   * @param {number} volume - Volume level (0.0 to 1.0)
+   */
+  updateVolumeDisplay(volume) {
+    if (this.volumeDisplay) {
+      this.volumeDisplay.textContent = `${Math.round(volume * 100)}%`;
     }
   }
 }

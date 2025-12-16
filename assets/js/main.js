@@ -5,6 +5,7 @@ import { QuizEngine } from './quiz-engine.js';
 import { UIController } from './ui-controller.js';
 import { getCategories } from './questions/index.js';
 import { storageManager } from './storage.js';
+import { soundManager } from './sound-manager.js';
 
 class QuizApp {
   constructor() {
@@ -17,6 +18,18 @@ class QuizApp {
    * Initialize the application
    */
   init() {
+    // Initialize sound manager and load preferences
+    soundManager.loadPreferences();
+    
+    // Initialize audio context on first user interaction (required by browsers)
+    const initAudio = () => {
+      soundManager.init();
+      document.removeEventListener('click', initAudio);
+      document.removeEventListener('touchstart', initAudio);
+    };
+    document.addEventListener('click', initAudio);
+    document.addEventListener('touchstart', initAudio);
+    
     // Set up event handlers
     this.uiController.onCategorySelected = (category) => {
       this.startQuiz(category);
