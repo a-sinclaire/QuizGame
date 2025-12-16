@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AppInterface Quiz</title>
+    <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>AppInterface Quiz</h1>
+        </header>
+
+        <!-- Start Screen -->
+        <div id="start-screen" class="screen active">
+            <h2>Welcome to the Quiz!</h2>
+            <p>Select a difficulty level to begin:</p>
+            <div class="difficulty-selector">
+                <button class="difficulty-btn" data-difficulty="easy">Easy</button>
+                <button class="difficulty-btn" data-difficulty="medium">Medium</button>
+                <button class="difficulty-btn" data-difficulty="hard">Hard</button>
+            </div>
+        </div>
+
+        <!-- Quiz Screen -->
+        <div id="quiz-screen" class="screen">
+            <div class="quiz-header">
+                <div class="progress-info">
+                    <span id="question-counter">Question 1 of 10</span>
+                    <div class="progress-bar">
+                        <div id="progress-fill" class="progress-fill"></div>
+                    </div>
+                </div>
+                <div class="score-display">
+                    <span>Score: <span id="current-score">0</span> points</span>
+                </div>
+            </div>
+
+            <div class="question-container">
+                <h2 id="question-text">Question text will appear here</h2>
+                
+                <div id="options-container" class="options-container">
+                    <!-- Options will be dynamically inserted here -->
+                </div>
+
+                <div id="hint-container" class="hint-container">
+                    <button id="hint-btn" class="hint-btn">💡 Hint</button>
+                    <div id="hint-display" class="hint-display"></div>
+                </div>
+
+                <div id="feedback-container" class="feedback-container">
+                    <!-- Feedback will appear here after answer selection -->
+                </div>
+
+                <button id="next-btn" class="next-btn" style="display: none;">Next Question</button>
+            </div>
+        </div>
+
+        <!-- Results Screen -->
+        <div id="results-screen" class="screen">
+            <h2>Quiz Complete!</h2>
+            <div class="results-summary">
+                <p>Final Score: <span id="final-score">0</span> points</p>
+                <p>Correct: <span id="correct-count">0</span> / <span id="total-count">0</span></p>
+                <p>Percentage: <span id="percentage">0</span>%</p>
+            </div>
+            <div class="results-actions">
+                <button id="restart-btn" class="action-btn">Take Another Quiz</button>
+                <button id="review-btn" class="action-btn">Review Answers</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="assets/js/main.js"></script>
+</body>
+</html>
+
