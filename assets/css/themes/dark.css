@@ -106,8 +106,19 @@
 
 :root[data-theme="dark"] .hint-display {
     background-color: #3d2e1e;
-    border-left-color: #ffc107;
+    border-left-color: #6c757d;
     color: var(--text-color);
+}
+
+:root[data-theme="dark"] .report-btn,
+:root[data-theme="dark"] .hint-btn {
+    background-color: #5a6268;
+    color: var(--text-color);
+}
+
+:root[data-theme="dark"] .report-btn:hover,
+:root[data-theme="dark"] .hint-btn:hover {
+    background-color: #6c757d;
 }
 
 :root[data-theme="dark"] .sound-btn {
@@ -143,5 +154,29 @@
 
 :root[data-theme="dark"] .review-navigation {
     background-color: var(--bg-color);
+}
+
+:root[data-theme="dark"] .modal-content {
+    background-color: var(--card-bg);
+}
+
+:root[data-theme="dark"] .modal-header {
+    border-bottom-color: var(--border-color);
+}
+
+:root[data-theme="dark"] .modal-footer {
+    border-top-color: var(--border-color);
+}
+
+:root[data-theme="dark"] .report-select,
+:root[data-theme="dark"] .report-textarea {
+    background-color: var(--bg-color);
+    border-color: var(--border-color);
+    color: var(--text-color);
+}
+
+:root[data-theme="dark"] .report-select:focus,
+:root[data-theme="dark"] .report-textarea:focus {
+    border-color: var(--primary-color);
 }
 

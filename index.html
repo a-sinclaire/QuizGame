@@ -56,7 +56,10 @@
             </div>
 
             <div class="question-container">
-                <h2 id="question-text">Question text will appear here</h2>
+                <div class="question-header">
+                    <h2 id="question-text">Question text will appear here</h2>
+                    <button id="report-btn" class="report-btn" title="Report this question">⚠️ Report</button>
+                </div>
                 
                 <div id="options-container" class="options-container">
                     <!-- Options will be dynamically inserted here -->
@@ -128,7 +131,36 @@
                 <button id="restart-btn" class="action-btn">Take Another Quiz</button>
                 <button id="review-btn" class="action-btn">Review Answers</button>
                 <button id="share-btn" class="action-btn share-btn">📋 Share Results</button>
+                <button id="export-reports-btn" class="action-btn export-btn">📥 Export Reports</button>
                 <button id="reset-btn" class="action-btn reset-btn">Reset All Data</button>
+            </div>
+        </div>
+
+        <!-- Report Modal -->
+        <div id="report-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Report Question</h3>
+                    <button id="close-report-modal" class="close-btn">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p id="report-question-text"></p>
+                    <label for="report-reason">Reason for reporting:</label>
+                    <select id="report-reason" class="report-select">
+                        <option value="">Select a reason...</option>
+                        <option value="incorrect">Question or answer is incorrect</option>
+                        <option value="unclear">Question is unclear or confusing</option>
+                        <option value="explanation">Explanation is confusing or wrong</option>
+                        <option value="typo">Typo or grammar error</option>
+                        <option value="other">Other issue</option>
+                    </select>
+                    <label for="report-details">Additional details (optional):</label>
+                    <textarea id="report-details" class="report-textarea" rows="4" placeholder="Please provide more information about the issue..."></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button id="cancel-report-btn" class="action-btn">Cancel</button>
+                    <button id="submit-report-btn" class="action-btn">Submit Report</button>
+                </div>
             </div>
         </div>
 

@@ -298,10 +298,42 @@ h2 {
     margin-top: var(--spacing-lg);
 }
 
+.question-header {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+    flex-wrap: wrap;
+}
+
 #question-text {
     font-size: 1.3rem;
-    margin-bottom: var(--spacing-lg);
+    margin: 0;
+    flex: 1;
+    min-width: 200px;
     color: var(--text-color);
+}
+
+.report-container {
+    margin-top: var(--spacing-md);
+    text-align: center;
+}
+
+.report-btn {
+    background-color: #6c757d;
+    color: #fff;
+    border: none;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: background-color 0.2s;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.report-btn:hover {
+    background-color: #5a6268;
 }
 
 .options-container {
@@ -350,8 +382,8 @@ h2 {
 
 .hint-btn {
     padding: var(--spacing-xs) var(--spacing-md);
-    background-color: #ffc107;
-    color: #333;
+    background-color: #6c757d;
+    color: #fff;
     border: none;
     border-radius: var(--radius-md);
     cursor: pointer;
@@ -359,7 +391,7 @@ h2 {
 }
 
 .hint-btn:hover {
-    background-color: #e0a800;
+    background-color: #5a6268;
 }
 
 .hint-display {
@@ -373,6 +405,115 @@ h2 {
 
 .hint-display.show {
     display: block;
+}
+
+/* Report button styles moved to question-header section */
+
+/* Modal Styles */
+.modal {
+    display: none !important;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background-color: var(--card-bg);
+    margin: auto;
+    padding: 0;
+    border-radius: var(--radius-lg);
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-lg);
+    border-bottom: 2px solid var(--border-color);
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: var(--text-color);
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 2rem;
+    cursor: pointer;
+    color: var(--text-color);
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    transition: background-color 0.2s;
+}
+
+.close-btn:hover {
+    background-color: var(--bg-color);
+}
+
+.modal-body {
+    padding: var(--spacing-lg);
+}
+
+.modal-body label {
+    display: block;
+    margin-top: var(--spacing-md);
+    margin-bottom: var(--spacing-xs);
+    color: var(--text-color);
+    font-weight: 600;
+}
+
+.modal-body label:first-child {
+    margin-top: 0;
+}
+
+.report-select,
+.report-textarea {
+    width: 100%;
+    padding: var(--spacing-sm);
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-md);
+    font-size: 1rem;
+    font-family: inherit;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    box-sizing: border-box;
+}
+
+.report-select:focus,
+.report-textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+.report-textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--spacing-md);
+    padding: var(--spacing-lg);
+    border-top: 2px solid var(--border-color);
 }
 
 .feedback-container {
@@ -562,6 +703,14 @@ h2 {
 .share-btn:disabled {
     opacity: 0.7;
     cursor: not-allowed;
+}
+
+.export-btn {
+    background-color: #6c757d;
+}
+
+.export-btn:hover {
+    background-color: #5a6268;
 }
 
 .reset-btn {
@@ -780,6 +929,16 @@ h2 {
     
     #question-text {
         font-size: 1.1rem;
+    }
+    
+    .question-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .report-btn {
+        width: 100%;
+        margin-top: var(--spacing-sm);
     }
     
     .quiz-header {

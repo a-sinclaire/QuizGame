@@ -3,7 +3,8 @@
 const STORAGE_KEYS = {
   HIGH_SCORES: 'quiz_high_scores',
   STATISTICS: 'quiz_statistics',
-  INCOMPLETE_QUIZ: 'quiz_incomplete'
+  INCOMPLETE_QUIZ: 'quiz_incomplete',
+  REPORTS: 'quiz_reports'
 };
 
 export class StorageManager {
@@ -193,6 +194,63 @@ export class StorageManager {
       console.error('Error resetting storage:', error);
       return false;
     }
+  }
+
+  /**
+   * Save a question report
+   * @param {Object} reportData - Report data object
+   */
+  saveReport(reportData) {
+    try {
+      const reports = this.getReports();
+      reports.push({
+        ...reportData,
+        id: `report-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        timestamp: Date.now(),
+        date: new Date().toISOString()
+      });
+      localStorage.setItem(STORAGE_KEYS.REPORTS, JSON.stringify(reports));
+      return true;
+    } catch (error) {
+      console.error('Error saving report:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Get all reports
+   * @returns {Array} Array of report objects
+   */
+  getReports() {
+    try {
+      const data = localStorage.getItem(STORAGE_KEYS.REPORTS);
+      return data ? JSON.parse(data) : [];
+    } catch (error) {
+      console.error('Error reading reports:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Clear all reports
+   */
+  clearReports() {
+    try {
+      localStorage.removeItem(STORAGE_KEYS.REPORTS);
+      return true;
+    } catch (error) {
+      console.error('Error clearing reports:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Export reports as JSON
+   * @returns {string} JSON string of reports
+   */
+  exportReports() {
+    const reports = this.getReports();
+    return JSON.stringify(reports, null, 2);
   }
 
   /**

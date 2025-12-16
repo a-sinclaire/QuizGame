@@ -2,6 +2,7 @@
 
 import { soundManager } from './sound-manager.js';
 import { themeManager } from './theme-manager.js';
+import { storageManager } from './storage.js';
 
 export class UIController {
   constructor(quizEngine) {
@@ -32,6 +33,17 @@ export class UIController {
     this.hintBtn = document.getElementById('hint-btn');
     this.hintDisplay = document.getElementById('hint-display');
     this.feedbackContainer = document.getElementById('feedback-container');
+
+    // Report elements
+    this.reportBtn = document.getElementById('report-btn');
+    this.reportModal = document.getElementById('report-modal');
+    this.closeReportModal = document.getElementById('close-report-modal');
+    this.cancelReportBtn = document.getElementById('cancel-report-btn');
+    this.submitReportBtn = document.getElementById('submit-report-btn');
+    this.reportReason = document.getElementById('report-reason');
+    this.reportDetails = document.getElementById('report-details');
+    this.reportQuestionText = document.getElementById('report-question-text');
+    this.exportReportsBtn = document.getElementById('export-reports-btn');
     this.nextBtn = document.getElementById('next-btn');
 
     // Results screen
@@ -140,6 +152,11 @@ export class UIController {
     this.hintDisplay.classList.remove('show');
     this.hintDisplay.textContent = '';
     this.updateHintButton();
+
+    // Show report button
+    if (this.reportBtn) {
+      this.reportBtn.style.display = 'block';
+    }
 
     // Hide feedback and next button
     this.feedbackContainer.classList.remove('show', 'correct', 'incorrect');
@@ -511,6 +528,61 @@ export class UIController {
     if (this.shareBtn) {
       this.shareBtn.addEventListener('click', () => {
         this.shareResults();
+      });
+    }
+
+    // Report button
+    if (this.reportBtn) {
+      console.log('Setting up report button:', this.reportBtn);
+      this.reportBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('Report button clicked!');
+        this.openReportModal();
+      });
+    } else {
+      console.warn('Report button not found!');
+    }
+
+    // Report modal controls
+    if (this.closeReportModal) {
+      this.closeReportModal.addEventListener('click', () => {
+        this.closeReportModalFunc();
+      });
+    }
+
+    if (this.cancelReportBtn) {
+      this.cancelReportBtn.addEventListener('click', () => {
+        this.closeReportModalFunc();
+      });
+    }
+
+    if (this.submitReportBtn) {
+      // Clone button to remove old listeners
+      const submitBtnClone = this.submitReportBtn.cloneNode(true);
+      this.submitReportBtn.parentNode.replaceChild(submitBtnClone, this.submitReportBtn);
+      this.submitReportBtn = submitBtnClone;
+      
+      this.submitReportBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.submitReport();
+      });
+    }
+
+    // Export reports button
+    if (this.exportReportsBtn) {
+      this.exportReportsBtn.addEventListener('click', () => {
+        this.exportReports();
+      });
+    }
+
+    // Close modal when clicking outside
+    if (this.reportModal) {
+      this.reportModal.addEventListener('click', (e) => {
+        if (e.target === this.reportModal) {
+          this.closeReportModalFunc();
+        }
       });
     }
 
@@ -928,6 +1000,141 @@ Breakdown:
   updateThemeIcon(theme) {
     if (this.themeIcon) {
       this.themeIcon.textContent = theme === 'dark' ? '☀️' : '🌙';
+    }
+  }
+
+  /**
+   * Open report modal
+   */
+  openReportModal() {
+    console.log('openReportModal called');
+    console.log('reportModal:', this.reportModal);
+    
+    if (!this.reportModal) {
+      console.error('Report modal not found!');
+      return;
+    }
+    
+    // Get current question from quiz engine
+    const question = this.quizEngine.getCurrentQuestion();
+    console.log('currentQuestion:', question);
+    
+    if (!question) {
+      console.error('No current question!');
+      return;
+    }
+    if (this.reportQuestionText) {
+      this.reportQuestionText.textContent = question.question;
+    }
+
+    // Reset form
+    if (this.reportReason) {
+      this.reportReason.value = '';
+    }
+    if (this.reportDetails) {
+      this.reportDetails.value = '';
+    }
+
+    // Show modal - use setProperty to override !important
+    this.reportModal.style.setProperty('display', 'flex', 'important');
+    console.log('Modal should be visible now');
+  }
+
+  /**
+   * Close report modal
+   */
+  closeReportModalFunc() {
+    if (this.reportModal) {
+      this.reportModal.style.display = 'none';
+    }
+  }
+
+  /**
+   * Submit report
+   */
+  submitReport() {
+    const question = this.quizEngine.getCurrentQuestion();
+    
+    if (!question) {
+      alert('No question to report. Please start a quiz first.');
+      return;
+    }
+
+    const reason = this.reportReason?.value;
+    if (!reason) {
+      alert('Please select a reason for reporting.');
+      return;
+    }
+    const details = this.reportDetails?.value || '';
+
+    const reportData = {
+      questionId: question.id,
+      question: question.question,
+      category: question.category,
+      difficulty: question.difficulty,
+      reason: reason,
+      details: details
+    };
+
+    const success = storageManager.saveReport(reportData);
+    
+    if (success) {
+      alert('Thank you for reporting this question! Your feedback helps improve the quiz.');
+      this.closeReportModalFunc();
+    } else {
+      alert('Failed to save report. Please try again.');
+    }
+  }
+
+  /**
+   * Export reports to clipboard
+   */
+  async exportReports() {
+    const reports = storageManager.getReports();
+    
+    if (reports.length === 0) {
+      alert('No reports to export.');
+      return;
+    }
+
+    const reportsText = storageManager.exportReports();
+
+    try {
+      // Use fallback method (more reliable)
+      const textArea = document.createElement('textarea');
+      textArea.value = reportsText;
+      textArea.style.position = 'fixed';
+      textArea.style.top = '0';
+      textArea.style.left = '0';
+      textArea.style.width = '2em';
+      textArea.style.height = '2em';
+      textArea.style.padding = '0';
+      textArea.style.border = 'none';
+      textArea.style.outline = 'none';
+      textArea.style.boxShadow = 'none';
+      textArea.style.background = 'transparent';
+      textArea.style.opacity = '0';
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      
+      const successful = document.execCommand('copy');
+      document.body.removeChild(textArea);
+      
+      if (successful) {
+        alert(`Exported ${reports.length} report(s) to clipboard!`);
+      } else {
+        // Fallback: try modern API
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(reportsText);
+          alert(`Exported ${reports.length} report(s) to clipboard!`);
+        } else {
+          throw new Error('Copy command failed');
+        }
+      }
+    } catch (error) {
+      console.error('Failed to export reports:', error);
+      alert('Failed to copy reports. Please try again.');
     }
   }
 }
