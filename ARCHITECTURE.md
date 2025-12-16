@@ -527,7 +527,9 @@ The quiz engine maintains state including:
 - ✅ **Report Export**: Export all reports as JSON to clipboard via button on results screen
 - ✅ **UI Integration**: Button only visible during quiz, hidden on start screen
 - ✅ **Responsive Design**: Button stacks below question on mobile
-- ⏳ **GitHub Integration**: Future: Create GitHub issue automatically (requires auth)
+- ✅ **GitHub Integration**: Opens pre-filled GitHub issue page (no auth required)
+- ✅ **GitLab Integration**: Opens pre-filled GitLab issue page for private packs
+- ✅ **Email Fallback**: Generates mailto: link for packs with contactEmail metadata
 
 #### 18. Scoreboard (Opt-In Leaderboard) ❌ NOT IMPLEMENTED
 - **Opt-In Sharing**: Users explicitly choose to share their score
