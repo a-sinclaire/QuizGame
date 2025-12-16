@@ -1,6 +1,7 @@
 // UI Controller - Handles rendering and user interactions
 
 import { soundManager } from './sound-manager.js';
+import { themeManager } from './theme-manager.js';
 
 export class UIController {
   constructor(quizEngine) {
@@ -48,7 +49,12 @@ export class UIController {
     this.overallAccuracy = document.getElementById('overall-accuracy');
     this.restartBtn = document.getElementById('restart-btn');
     this.reviewBtn = document.getElementById('review-btn');
+    this.shareBtn = document.getElementById('share-btn');
     this.resetBtn = document.getElementById('reset-btn');
+
+    // Theme control
+    this.themeToggle = document.getElementById('theme-toggle');
+    this.themeIcon = document.getElementById('theme-icon');
 
     // Sound controls
     this.muteBtn = document.getElementById('mute-btn');
@@ -419,6 +425,32 @@ export class UIController {
     // Hint button
     this.hintBtn.addEventListener('click', () => this.handleHintClick());
 
+    // Theme toggle - clone to remove old listeners
+    if (this.themeToggle) {
+      console.log('Setting up theme toggle button');
+      const themeToggleClone = this.themeToggle.cloneNode(true);
+      this.themeToggle.parentNode.replaceChild(themeToggleClone, this.themeToggle);
+      this.themeToggle = themeToggleClone;
+      // Update icon reference
+      this.themeIcon = this.themeToggle.querySelector('#theme-icon');
+      
+      console.log('Theme toggle button element:', this.themeToggle);
+      
+      this.themeToggle.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('Theme toggle clicked, current theme:', themeManager.getTheme());
+        const newTheme = themeManager.toggleTheme();
+        console.log('New theme:', newTheme);
+        this.updateThemeIcon(newTheme);
+      });
+      
+      // Set initial theme icon
+      this.updateThemeIcon(themeManager.getTheme());
+    } else {
+      console.warn('Theme toggle button not found!');
+    }
+
     // Sound controls - clone to remove old listeners
     if (this.muteBtn) {
       const muteBtnClone = this.muteBtn.cloneNode(true);
@@ -468,12 +500,19 @@ export class UIController {
       }
     });
 
-    // Review button (placeholder for now)
+    // Review button
     this.reviewBtn.addEventListener('click', () => {
       if (this.onReview) {
         this.onReview();
       }
     });
+
+    // Share button
+    if (this.shareBtn) {
+      this.shareBtn.addEventListener('click', () => {
+        this.shareResults();
+      });
+    }
 
     // Reset button - clone to remove old listeners
     if (this.resetBtn) {
@@ -775,6 +814,120 @@ export class UIController {
   updateVolumeDisplay(volume) {
     if (this.volumeDisplay) {
       this.volumeDisplay.textContent = `${Math.round(volume * 100)}%`;
+    }
+  }
+
+  /**
+   * Share results to clipboard
+   */
+  async shareResults() {
+    if (!this.currentResults) {
+      return;
+    }
+
+    const results = this.currentResults;
+    const category = results.category || 'Random';
+    
+    // Format results text
+    const shareText = `AppInterface Quiz Results
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Score: ${results.score} points
+Correct: ${results.correctCount} / ${results.totalQuestions} (${results.percentage}%)
+Category: ${category}
+Difficulty: ${results.difficulty || 'Mixed (Easy → Medium → Hard)'}
+
+Breakdown:
+- Easy: ${this.getDifficultyBreakdown(results.answers, 'easy')}
+- Medium: ${this.getDifficultyBreakdown(results.answers, 'medium')}
+- Hard: ${this.getDifficultyBreakdown(results.answers, 'hard')}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+
+    try {
+      // Use fallback method (more reliable, works in all contexts)
+      const textArea = document.createElement('textarea');
+      textArea.value = shareText;
+      textArea.style.position = 'fixed';
+      textArea.style.top = '0';
+      textArea.style.left = '0';
+      textArea.style.width = '2em';
+      textArea.style.height = '2em';
+      textArea.style.padding = '0';
+      textArea.style.border = 'none';
+      textArea.style.outline = 'none';
+      textArea.style.boxShadow = 'none';
+      textArea.style.background = 'transparent';
+      textArea.style.opacity = '0';
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      
+      const successful = document.execCommand('copy');
+      document.body.removeChild(textArea);
+      
+      if (successful) {
+        this.showShareFeedback('Results copied to clipboard!');
+      } else {
+        // Fallback: try modern API if execCommand failed
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(shareText);
+          this.showShareFeedback('Results copied to clipboard!');
+        } else {
+          throw new Error('Copy command failed');
+        }
+      }
+    } catch (error) {
+      console.error('Failed to copy:', error);
+      this.showShareFeedback('Failed to copy. Please try again.');
+    }
+  }
+
+  /**
+   * Get difficulty breakdown for share text
+   * @param {Array} answers - Answer array
+   * @param {string} difficulty - Difficulty level
+   * @returns {string} Formatted breakdown
+   */
+  getDifficultyBreakdown(answers, difficulty) {
+    let correct = 0;
+    let total = 0;
+    
+    answers.forEach((answer, index) => {
+      const question = this.quizEngine.questions[index];
+      if (question && question.difficulty === difficulty) {
+        total++;
+        if (answer.isCorrect) {
+          correct++;
+        }
+      }
+    });
+    
+    return total > 0 ? `${correct}/${total}` : 'N/A';
+  }
+
+  /**
+   * Show feedback message for share action
+   * @param {string} message - Feedback message
+   */
+  showShareFeedback(message) {
+    if (this.shareBtn) {
+      const originalText = this.shareBtn.textContent;
+      this.shareBtn.textContent = message;
+      this.shareBtn.disabled = true;
+      
+      setTimeout(() => {
+        this.shareBtn.textContent = originalText;
+        this.shareBtn.disabled = false;
+      }, 2000);
+    }
+  }
+
+  /**
+   * Update theme icon based on current theme
+   * @param {string} theme - Current theme ('light' or 'dark')
+   */
+  updateThemeIcon(theme) {
+    if (this.themeIcon) {
+      this.themeIcon.textContent = theme === 'dark' ? '☀️' : '🌙';
     }
   }
 }

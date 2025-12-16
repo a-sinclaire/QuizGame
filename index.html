@@ -5,18 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AppInterface Quiz</title>
     <link rel="stylesheet" href="assets/css/styles.css">
+    <link rel="stylesheet" href="assets/css/themes/dark.css" id="dark-theme" media="none">
 </head>
 <body>
     <div class="container">
         <header>
             <h1>AppInterface Quiz</h1>
-            <div class="sound-controls">
-                <button id="mute-btn" class="sound-btn" title="Toggle sound">
-                    <span id="mute-icon">🔊</span>
+            <div class="header-controls">
+                <button id="theme-toggle" class="theme-btn" title="Toggle dark mode">
+                    <span id="theme-icon">🌙</span>
                 </button>
-                <div class="volume-control">
-                    <input type="range" id="volume-slider" min="0" max="100" value="50" title="Volume">
-                    <span id="volume-display">50%</span>
+                <div class="sound-controls">
+                    <button id="mute-btn" class="sound-btn" title="Toggle sound">
+                        <span id="mute-icon">🔊</span>
+                    </button>
+                    <div class="volume-control">
+                        <input type="range" id="volume-slider" min="0" max="100" value="50" title="Volume">
+                        <span id="volume-display">50%</span>
+                    </div>
                 </div>
             </div>
         </header>
@@ -121,6 +127,7 @@
             <div class="results-actions">
                 <button id="restart-btn" class="action-btn">Take Another Quiz</button>
                 <button id="review-btn" class="action-btn">Review Answers</button>
+                <button id="share-btn" class="action-btn share-btn">📋 Share Results</button>
                 <button id="reset-btn" class="action-btn reset-btn">Reset All Data</button>
             </div>
         </div>

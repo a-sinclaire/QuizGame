@@ -6,6 +6,7 @@ import { UIController } from './ui-controller.js';
 import { getCategories } from './questions/index.js';
 import { storageManager } from './storage.js';
 import { soundManager } from './sound-manager.js';
+import { themeManager } from './theme-manager.js';
 
 class QuizApp {
   constructor() {

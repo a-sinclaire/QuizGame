@@ -24,8 +24,6 @@ A browser-based quiz game designed to run on GitHub Pages, serving as both an as
 - [ ] Mobile-friendly design (responsive layout done, but no swipe gestures)
 
 ### ❌ Not Yet Implemented
-- [ ] Dark mode and themes (light/dark with persistence)
-- [ ] Share results (copy to clipboard)
 - [ ] Question reporting (report incorrect/unclear questions)
 - [ ] Analytics collection (aggregate user data - GitHub Actions approach)
 - [ ] Scoreboard (opt-in sharing with custom names)
@@ -455,13 +453,13 @@ The quiz engine maintains state including:
 - ✅ **Persistent Preferences**: Volume and mute state saved in localStorage
 - ✅ **Browser Compatibility**: Audio context initialized on first user interaction (required by browsers)
 
-#### 12. Dark Mode & Themes ❌ NOT IMPLEMENTED
-- **Dark Theme**: Full dark mode with proper contrast
-- **Light Theme**: Default light theme
-- **Theme Toggle**: Easy switch between themes
-- **Persistent Preference**: Save theme choice in localStorage
-- **System Preference**: Option to follow OS theme preference
-- **Custom Themes**: Structure allows for additional themes (future)
+#### 12. Dark Mode & Themes ✅ IMPLEMENTED
+- ✅ **Dark Theme**: Full dark mode with proper contrast
+- ✅ **Light Theme**: Default light theme
+- ✅ **Theme Toggle**: Easy switch between themes (🌙/☀️ button)
+- ✅ **Persistent Preference**: Save theme choice in localStorage
+- ✅ **System Preference**: Detects and applies OS theme preference on first load
+- ⏳ **Custom Themes**: Structure allows for additional themes (future)
 
 #### 13. Animations ⏳ PARTIALLY IMPLEMENTED
 - ✅ **Progress Bar**: Smooth progress bar animation (CSS transition)
@@ -480,17 +478,12 @@ The quiz engine maintains state including:
 - **Category Metadata**: Display names, descriptions, icons
 - See "Category/Module Structure" section above for implementation details
 
-#### 15. Share Results ❌ NOT IMPLEMENTED
-- **Copy to Clipboard**: Button to copy results as text
-- **Share Format**: 
-  ```
-  AppInterfaceQuiz Results
-  Score: 85/100 (85%)
-  Difficulty: Medium
-  Category: Module 1
-  Questions: 10/10 correct
-  ```
-- **Social Sharing**: Future: Share to Twitter, etc. (with user permission)
+#### 15. Share Results ✅ IMPLEMENTED
+- ✅ **Copy to Clipboard**: Button to copy results as text
+- ✅ **Share Format**: Formatted text with score, percentage, category, difficulty, and breakdown
+- ✅ **Visual Feedback**: Button shows confirmation message when copied
+- ✅ **Browser Compatibility**: Uses execCommand with Clipboard API fallback
+- ⏳ **Social Sharing**: Future: Share to Twitter, etc. (with user permission)
 
 #### 16. Difficulty Progression
 - **Unlock System**: Unlock harder difficulties based on performance
