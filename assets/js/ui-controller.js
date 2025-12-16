@@ -47,10 +47,29 @@ export class UIController {
     this.restartBtn = document.getElementById('restart-btn');
     this.reviewBtn = document.getElementById('review-btn');
     this.resetBtn = document.getElementById('reset-btn');
+
+    // Review screen
+    this.reviewScreen = document.getElementById('review-screen');
+    this.reviewCategoryFilter = document.getElementById('review-category-filter');
+    this.reviewDifficultyFilter = document.getElementById('review-difficulty-filter');
+    this.reviewPrevBtn = document.getElementById('review-prev-btn');
+    this.reviewNextBtn = document.getElementById('review-next-btn');
+    this.reviewQuestionCounter = document.getElementById('review-question-counter');
+    this.reviewDifficultyBadge = document.getElementById('review-difficulty-badge');
+    this.reviewQuestionId = document.getElementById('review-question-id');
+    this.reviewQuestionText = document.getElementById('review-question-text');
+    this.reviewOptionsContainer = document.getElementById('review-options-container');
+    this.reviewExplanations = document.getElementById('review-explanations');
+    this.reviewBackBtn = document.getElementById('review-back-btn');
+    this.reviewStartBtn = document.getElementById('review-start-btn');
     
     // Store current results for display
     this.currentResults = null;
     this.isNewHighScore = false;
+    
+    // Review mode state
+    this.reviewQuestions = [];
+    this.currentReviewIndex = 0;
   }
 
   /**
@@ -414,6 +433,272 @@ export class UIController {
           this.onReset();
         }
       });
+    }
+
+    // Review mode navigation - will be set up when review mode is shown to avoid duplicates
+  }
+
+  /**
+   * Set up review mode event listeners (called when entering review mode)
+   */
+  setupReviewModeListeners() {
+    // Clone buttons to remove old listeners
+    if (this.reviewPrevBtn) {
+      const prevClone = this.reviewPrevBtn.cloneNode(true);
+      this.reviewPrevBtn.parentNode.replaceChild(prevClone, this.reviewPrevBtn);
+      this.reviewPrevBtn = prevClone;
+      this.reviewPrevBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.reviewPreviousQuestion();
+      });
+    }
+    
+    if (this.reviewNextBtn) {
+      const nextClone = this.reviewNextBtn.cloneNode(true);
+      this.reviewNextBtn.parentNode.replaceChild(nextClone, this.reviewNextBtn);
+      this.reviewNextBtn = nextClone;
+      this.reviewNextBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.reviewNextQuestion();
+      });
+    }
+    
+    if (this.reviewCategoryFilter) {
+      // Remove old listener by cloning
+      const filterClone = this.reviewCategoryFilter.cloneNode(true);
+      this.reviewCategoryFilter.parentNode.replaceChild(filterClone, this.reviewCategoryFilter);
+      this.reviewCategoryFilter = filterClone;
+      this.reviewCategoryFilter.addEventListener('change', () => this.applyReviewFilters());
+    }
+    
+    if (this.reviewDifficultyFilter) {
+      // Remove old listener by cloning
+      const diffClone = this.reviewDifficultyFilter.cloneNode(true);
+      this.reviewDifficultyFilter.parentNode.replaceChild(diffClone, this.reviewDifficultyFilter);
+      this.reviewDifficultyFilter = diffClone;
+      this.reviewDifficultyFilter.addEventListener('change', () => this.applyReviewFilters());
+    }
+    
+    if (this.reviewBackBtn) {
+      const backClone = this.reviewBackBtn.cloneNode(true);
+      this.reviewBackBtn.parentNode.replaceChild(backClone, this.reviewBackBtn);
+      this.reviewBackBtn = backClone;
+      this.reviewBackBtn.addEventListener('click', () => {
+        if (this.currentResults) {
+          this.showResults();
+        } else {
+          this.renderStartScreen();
+        }
+      });
+    }
+    
+    if (this.reviewStartBtn) {
+      const startClone = this.reviewStartBtn.cloneNode(true);
+      this.reviewStartBtn.parentNode.replaceChild(startClone, this.reviewStartBtn);
+      this.reviewStartBtn = startClone;
+      this.reviewStartBtn.addEventListener('click', () => {
+        this.renderStartScreen();
+      });
+    }
+  }
+
+  /**
+   * Show review mode screen
+   */
+  showReviewMode() {
+    this.showScreen('review-screen');
+    
+    // Get all questions from the quiz that was just completed
+    this.reviewQuestions = [...this.quizEngine.questions];
+    this.currentReviewIndex = 0;
+    
+    // Set up event listeners (removes duplicates)
+    this.setupReviewModeListeners();
+    
+    // Populate category filter
+    this.populateReviewCategoryFilter();
+    
+    // Apply initial filters and render
+    this.applyReviewFilters();
+  }
+
+  /**
+   * Populate category filter dropdown
+   */
+  populateReviewCategoryFilter() {
+    if (!this.reviewCategoryFilter) return;
+    
+    // Get unique categories from questions
+    const categories = [...new Set(this.reviewQuestions.map(q => q.category))];
+    
+    // Clear existing options except "All Categories"
+    this.reviewCategoryFilter.innerHTML = '<option value="">All Categories</option>';
+    
+    categories.forEach(category => {
+      const option = document.createElement('option');
+      option.value = category;
+      option.textContent = category.charAt(0).toUpperCase() + category.slice(1).replace(/([A-Z])/g, ' $1');
+      this.reviewCategoryFilter.appendChild(option);
+    });
+  }
+
+  /**
+   * Apply filters to review questions
+   */
+  applyReviewFilters() {
+    const category = this.reviewCategoryFilter ? this.reviewCategoryFilter.value : '';
+    const difficulty = this.reviewDifficultyFilter ? this.reviewDifficultyFilter.value : '';
+    
+    let filtered = [...this.quizEngine.questions];
+    
+    if (category) {
+      filtered = filtered.filter(q => q.category === category);
+    }
+    
+    if (difficulty) {
+      filtered = filtered.filter(q => q.difficulty === difficulty);
+    }
+    
+    this.reviewQuestions = filtered;
+    this.currentReviewIndex = 0;
+    this.renderReviewQuestion();
+  }
+
+  /**
+   * Render current review question
+   */
+  renderReviewQuestion() {
+    if (this.reviewQuestions.length === 0) {
+      this.reviewQuestionText.textContent = 'No questions match the selected filters.';
+      this.reviewOptionsContainer.innerHTML = '';
+      this.reviewExplanations.innerHTML = '';
+      if (this.reviewPrevBtn) this.reviewPrevBtn.disabled = true;
+      if (this.reviewNextBtn) this.reviewNextBtn.disabled = true;
+      return;
+    }
+    
+    const question = this.reviewQuestions[this.currentReviewIndex];
+    
+    // Find user's answer for this question
+    const userAnswer = this.quizEngine.answers.find(a => a.questionId === question.id);
+    const userSelectedIndex = userAnswer ? userAnswer.selectedIndex : null;
+    const userWasCorrect = userAnswer ? userAnswer.isCorrect : null;
+    
+    // Update counter
+    this.reviewQuestionCounter.textContent = `Question ${this.currentReviewIndex + 1} of ${this.reviewQuestions.length}`;
+    
+    // Update navigation buttons
+    if (this.reviewPrevBtn) this.reviewPrevBtn.disabled = this.currentReviewIndex === 0;
+    if (this.reviewNextBtn) this.reviewNextBtn.disabled = this.currentReviewIndex === this.reviewQuestions.length - 1;
+    
+    // Update question info
+    if (this.reviewQuestionId) this.reviewQuestionId.textContent = `ID: ${question.id}`;
+    if (this.reviewDifficultyBadge) {
+      this.reviewDifficultyBadge.textContent = question.difficulty;
+      this.reviewDifficultyBadge.className = `difficulty-badge ${question.difficulty}`;
+    }
+    if (this.reviewQuestionText) this.reviewQuestionText.textContent = question.question;
+    
+    // Render options with correct answer and user selection highlighted
+    if (this.reviewOptionsContainer) {
+      this.reviewOptionsContainer.innerHTML = '';
+      question.options.forEach((option, index) => {
+        const optionDiv = document.createElement('div');
+        let optionClasses = 'review-option';
+        
+        // Add classes based on correctness and user selection
+        if (index === question.correctIndex) {
+          optionClasses += ' correct';
+        }
+        if (userSelectedIndex !== null && index === userSelectedIndex) {
+          optionClasses += ' user-selected';
+          if (!userWasCorrect) {
+            optionClasses += ' user-incorrect';
+          }
+        }
+        
+        optionDiv.className = optionClasses;
+        
+        const optionText = document.createElement('span');
+        optionText.className = 'review-option-text';
+        optionText.textContent = option;
+        optionDiv.appendChild(optionText);
+        
+        // Add badges
+        const badgeContainer = document.createElement('span');
+        badgeContainer.className = 'badge-container';
+        
+        if (index === question.correctIndex) {
+          const correctBadge = document.createElement('span');
+          correctBadge.className = 'correct-badge';
+          correctBadge.textContent = '✓ Correct';
+          badgeContainer.appendChild(correctBadge);
+        }
+        
+        if (userSelectedIndex !== null && index === userSelectedIndex && !userWasCorrect) {
+          const userBadge = document.createElement('span');
+          userBadge.className = 'user-badge';
+          userBadge.textContent = 'Your Answer';
+          badgeContainer.appendChild(userBadge);
+        } else if (userSelectedIndex !== null && index === userSelectedIndex && userWasCorrect) {
+          const userBadge = document.createElement('span');
+          userBadge.className = 'user-badge correct-user';
+          userBadge.textContent = 'Your Answer';
+          badgeContainer.appendChild(userBadge);
+        }
+        
+        if (badgeContainer.children.length > 0) {
+          optionDiv.appendChild(badgeContainer);
+        }
+        
+        this.reviewOptionsContainer.appendChild(optionDiv);
+      });
+    }
+    
+    // Render explanations
+    if (this.reviewExplanations) {
+      this.reviewExplanations.innerHTML = '<h4>Explanations:</h4>';
+      
+      question.options.forEach((option, index) => {
+        const explanationDiv = document.createElement('div');
+        explanationDiv.className = `explanation-item ${index === question.correctIndex ? 'correct-explanation' : ''}`;
+        
+        const optionLabel = document.createElement('strong');
+        optionLabel.textContent = `${option}: `;
+        explanationDiv.appendChild(optionLabel);
+        
+        const explanationText = document.createElement('span');
+        if (index === question.correctIndex) {
+          explanationText.textContent = question.correctResponse;
+        } else {
+          explanationText.textContent = question.incorrectResponses[index] || 'No explanation available.';
+        }
+        explanationDiv.appendChild(explanationText);
+        
+        this.reviewExplanations.appendChild(explanationDiv);
+      });
+    }
+  }
+
+  /**
+   * Navigate to previous question in review mode
+   */
+  reviewPreviousQuestion() {
+    if (this.currentReviewIndex > 0) {
+      this.currentReviewIndex--;
+      this.renderReviewQuestion();
+    }
+  }
+
+  /**
+   * Navigate to next question in review mode
+   */
+  reviewNextQuestion() {
+    if (this.currentReviewIndex < this.reviewQuestions.length - 1) {
+      this.currentReviewIndex++;
+      this.renderReviewQuestion();
     }
   }
 }

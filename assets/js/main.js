@@ -31,9 +31,8 @@ class QuizApp {
     };
 
     this.uiController.onReview = () => {
-      // Placeholder for review functionality
-      console.log('Review functionality coming soon');
-      this.restart();
+      // Show review mode
+      this.uiController.showReviewMode();
     };
 
     this.uiController.onReset = () => {

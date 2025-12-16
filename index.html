@@ -115,6 +115,51 @@
                 <button id="reset-btn" class="action-btn reset-btn">Reset All Data</button>
             </div>
         </div>
+
+        <!-- Review Mode Screen -->
+        <div id="review-screen" class="screen">
+            <div class="review-header">
+                <h2>Review Mode</h2>
+                <div class="review-filters">
+                    <select id="review-category-filter" class="filter-select">
+                        <option value="">All Categories</option>
+                    </select>
+                    <select id="review-difficulty-filter" class="filter-select">
+                        <option value="">All Difficulties</option>
+                        <option value="easy">Easy</option>
+                        <option value="medium">Medium</option>
+                        <option value="hard">Hard</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="review-navigation">
+                <button id="review-prev-btn" class="nav-btn">← Previous</button>
+                <span id="review-question-counter">Question 1 of 6</span>
+                <button id="review-next-btn" class="nav-btn">Next →</button>
+            </div>
+
+            <div class="review-question-container">
+                <div class="review-question-header">
+                    <span id="review-difficulty-badge" class="difficulty-badge">Easy</span>
+                    <span id="review-question-id" class="question-id"></span>
+                </div>
+                <h3 id="review-question-text">Question text</h3>
+                
+                <div id="review-options-container" class="review-options">
+                    <!-- Options will be dynamically inserted -->
+                </div>
+
+                <div id="review-explanations" class="review-explanations">
+                    <!-- Explanations will be shown here -->
+                </div>
+            </div>
+
+            <div class="review-actions">
+                <button id="review-back-btn" class="action-btn">Back to Results</button>
+                <button id="review-start-btn" class="action-btn">Back to Start</button>
+            </div>
+        </div>
     </div>
 
     <script type="module" src="assets/js/main.js"></script>
