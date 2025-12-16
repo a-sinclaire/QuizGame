@@ -1101,11 +1101,91 @@ Breakdown:
     const success = storageManager.saveReport(reportData);
     
     if (success) {
-      alert('Thank you for reporting this question! Your feedback helps improve the quiz.');
+      // Create GitHub issue URL with pre-filled form data
+      this.createGitHubIssue(reportData);
       this.closeReportModalFunc();
     } else {
       alert('Failed to save report. Please try again.');
     }
+  }
+
+  /**
+   * Create GitHub issue for question report
+   * @param {Object} reportData - Report data object
+   */
+  createGitHubIssue(reportData) {
+    // Get repository info from config or use defaults
+    const repoOwner = this.getRepoOwner();
+    const repoName = this.getRepoName();
+    
+    if (!repoOwner || !repoName || repoOwner === 'YOUR_GITHUB_USERNAME') {
+      // Fallback: just show success message
+      alert('Thank you for reporting this question! Your feedback helps improve the quiz.\n\nNote: GitHub issue creation requires repository configuration. Please update window.quizConfig in index.html.');
+      return;
+    }
+
+    // Format issue title
+    const title = encodeURIComponent(`Question Report: ${reportData.questionId} (${reportData.difficulty})`);
+    
+    // Format issue body
+    const reasonLabels = {
+      'incorrect': 'Question or answer is incorrect',
+      'unclear': 'Question is unclear or confusing',
+      'explanation': 'Explanation is confusing or wrong',
+      'typo': 'Typo or grammar error',
+      'other': 'Other issue'
+    };
+    
+    const body = encodeURIComponent(`## Question Report
+
+**Question ID:** ${reportData.questionId}
+**Category:** ${reportData.category || 'N/A'}
+**Difficulty:** ${reportData.difficulty}
+**Reason:** ${reasonLabels[reportData.reason] || reportData.reason}
+
+**Question Text:**
+${reportData.question}
+
+**Additional Details:**
+${reportData.details || 'None provided'}
+
+---
+*This report was submitted from the quiz application.*`);
+
+    // Create GitHub issue URL
+    const issueUrl = `https://github.com/${repoOwner}/${repoName}/issues/new?title=${title}&body=${body}&labels=question-report`;
+    
+    // Open in new tab
+    window.open(issueUrl, '_blank');
+    
+    // Show confirmation
+    alert('Thank you for reporting this question! Opening GitHub issue page...');
+  }
+
+  /**
+   * Get repository owner from config or environment
+   * @returns {string|null} Repository owner
+   */
+  getRepoOwner() {
+    // Try to get from window config (can be set in HTML)
+    if (window.quizConfig && window.quizConfig.repoOwner) {
+      return window.quizConfig.repoOwner;
+    }
+    // Could also try to detect from current page URL if on GitHub Pages
+    return null;
+  }
+
+  /**
+   * Get repository name from config or environment
+   * @returns {string|null} Repository name
+   */
+  getRepoName() {
+    // Try to get from window config (can be set in HTML)
+    if (window.quizConfig && window.quizConfig.repoName) {
+      return window.quizConfig.repoName;
+    }
+    // Could also try to detect from current page URL if on GitHub Pages
+    return null;
   }
 
   /**
