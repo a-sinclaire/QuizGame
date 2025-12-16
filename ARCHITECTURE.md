@@ -20,7 +20,6 @@ A browser-based quiz game designed to run on GitHub Pages, serving as both an as
 - [x] Basic responsive design (mobile-friendly layout)
 
 ### ⏳ Partially Implemented
-- [ ] Animations (basic CSS transitions exist, but not all planned animations)
 - [ ] Mobile-friendly design (responsive layout done, but no swipe gestures)
 
 ### ❌ Not Yet Implemented
@@ -468,14 +467,16 @@ The quiz engine maintains state including:
 - ✅ **System Preference**: Detects and applies OS theme preference on first load
 - ⏳ **Custom Themes**: Structure allows for additional themes (future)
 
-#### 13. Animations ⏳ PARTIALLY IMPLEMENTED
+#### 13. Animations ✅ IMPLEMENTED
 - ✅ **Progress Bar**: Smooth progress bar animation (CSS transition)
-- ✅ **Button Hover**: Subtle hover effects
-- ❌ **Question Transitions**: Smooth fade/slide between questions
-- ❌ **Answer Reveal**: Animated reveal of correct answer
-- ❌ **Score Updates**: Animated score counter
-- ❌ **Loading States**: Spinner/loading animation for data loading
-- **CSS Animations**: Use CSS keyframes for performance
+- ✅ **Button Hover**: Enhanced hover effects with scale and shadow
+- ✅ **Question Transitions**: Smooth slide-in animation between questions
+- ✅ **Screen Transitions**: Fade-in animation when switching screens
+- ✅ **Answer Reveal**: Pulse animation for correct/incorrect answers
+- ✅ **Score Updates**: Pulse animation when score increases (turns green briefly)
+- ✅ **Option Buttons**: Staggered scale-in animation (buttons appear sequentially)
+- ⏳ **Loading States**: Spinner/loading animation for data loading (future)
+- ✅ **CSS Animations**: All animations use CSS keyframes for performance
 
 #### 14. Categories/Modules
 - **Category Selection**: UI to select which module/category to quiz on
