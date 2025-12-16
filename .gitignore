@@ -26,6 +26,12 @@ REPO_RENAME_PLAN.md
 GITHUB_RENAME_STEPS.md
 QUESTION_PACKS_DESIGN.md
 REPORTING_AND_PACKS.md
+SECURE_PACKS_DESIGN.md
+SECURE_PACKS_SIMPLE.md
+GITLAB_SETUP.md
+GITLAB_OAUTH_SETUP.md
+TEAM_ACCESS_SOLUTIONS.md
+DEBUG_OAUTH.md
 
 # App-interface specific question packs (disabled, use test-pack instead)
 assets/js/questions/categories/fundamentals.js

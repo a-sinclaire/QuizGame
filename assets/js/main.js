@@ -8,6 +8,7 @@ import { storageManager } from './storage.js';
 import { soundManager } from './sound-manager.js';
 import { themeManager } from './theme-manager.js';
 import { questionPackManager } from './question-packs.js';
+import { GitLabOAuth } from './gitlab-oauth.js';
 
 class QuizApp {
   constructor() {
@@ -34,6 +35,23 @@ class QuizApp {
         packVersion: '1.0.0'
       }
     );
+    
+    // Load cached packs from storage
+    questionPackManager.loadCachedPacks().then(() => {
+      // Update UI with loaded packs (after DOM is ready)
+      setTimeout(() => {
+        if (document.getElementById('category-selector')) {
+          this.updateCategorySelector();
+        }
+      }, 100);
+    });
+    
+    // Set up GitLab pack loader (after DOM is ready)
+    setTimeout(() => {
+      if (document.getElementById('load-gitlab-packs-btn')) {
+        this.setupGitLabLoader();
+      }
+    }, 100);
     
     // Initialize sound manager and load preferences
     soundManager.loadPreferences();
@@ -360,6 +378,321 @@ class QuizApp {
       } else {
         alert('Error resetting data.');
       }
+    }
+  }
+
+  /**
+   * Update category selector with dynamically loaded packs
+   */
+  updateCategorySelector() {
+    const categorySelector = document.getElementById('category-selector');
+    if (!categorySelector) return;
+    
+    // Get all available categories from pack manager
+    const mergedQuestions = questionPackManager.getMergedQuestions();
+    const categories = Object.keys(mergedQuestions);
+    
+    // Remove existing category buttons (except random and test-pack)
+    const existingButtons = categorySelector.querySelectorAll('.category-btn[data-category]:not([data-category="random"]):not([data-category="test-pack"])');
+    existingButtons.forEach(btn => btn.remove());
+    
+    // Add buttons for new categories
+    categories.forEach(category => {
+      if (category === 'test-pack' || category === 'random') return;
+      
+      // Check if button already exists
+      if (categorySelector.querySelector(`[data-category="${category}"]`)) return;
+      
+      const btn = document.createElement('button');
+      btn.className = 'category-btn';
+      btn.setAttribute('data-category', category);
+      
+      // Find which pack this category belongs to by checking questions
+      const questions = questionPackManager.getMergedQuestions();
+      const categoryQuestions = questions[category] || [];
+      
+      // Find the pack that contains questions in this category
+      let pack = null;
+      if (categoryQuestions.length > 0) {
+        // Get packId from first question
+        const firstQuestion = categoryQuestions[0];
+        const packId = firstQuestion.packId;
+        if (packId) {
+          pack = questionPackManager.getPackMetadata(packId);
+        }
+      }
+      
+      // Determine display name
+      let displayName = pack?.packName || category.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+      
+      // Add lock icon if it's a secure pack (from API)
+      if (pack && pack.packSource === 'api') {
+        displayName = `🔒 ${displayName}`;
+      }
+      
+      btn.textContent = displayName;
+      categorySelector.appendChild(btn);
+    });
+    
+    // Re-attach event listeners
+    this.uiController.setupEventListeners();
+  }
+
+  /**
+   * Set up GitLab pack loader UI with OAuth
+   */
+  setupGitLabLoader() {
+    // Set up manual token loader (fallback)
+    const loadBtn = document.getElementById('load-gitlab-packs-btn');
+    const statusDiv = document.getElementById('gitlab-status');
+    
+    if (!loadBtn) return;
+    
+    loadBtn.addEventListener('click', async () => {
+      const gitlabUrl = document.getElementById('gitlab-url')?.value.trim();
+      const repoPath = document.getElementById('gitlab-repo')?.value.trim();
+      const token = document.getElementById('gitlab-token')?.value.trim();
+      const packsInput = document.getElementById('gitlab-packs')?.value.trim();
+      
+      // Validate inputs
+      if (!gitlabUrl || !repoPath || !token || !packsInput) {
+        this.showGitLabStatus('Please fill in all fields.', 'error');
+        return;
+      }
+      
+      // Parse pack files (one per line)
+      const packFiles = packsInput.split('\n').map(f => f.trim()).filter(f => f);
+      if (packFiles.length === 0) {
+        this.showGitLabStatus('Please specify at least one pack file.', 'error');
+        return;
+      }
+      
+      // Disable button and show loading
+      loadBtn.disabled = true;
+      loadBtn.textContent = 'Loading...';
+      this.showGitLabStatus('Loading packs from GitLab...', 'info');
+      
+      try {
+        // Load packs from GitLab
+        await questionPackManager.loadFromGitLab(gitlabUrl, repoPath, token, packFiles);
+        
+        // Reload cached packs to ensure they're available
+        await questionPackManager.loadCachedPacks();
+        
+        // Update category selector
+        this.updateCategorySelector();
+        
+        // Show success
+        const packCount = packFiles.length;
+        this.showGitLabStatus(`✅ Successfully loaded ${packCount} pack(s)! Categories updated.`, 'success');
+        
+        // Clear token field for security
+        document.getElementById('gitlab-token').value = '';
+        
+        // Save GitLab config (without token) for convenience
+        storageManager.saveGitLabConfig({
+          gitlabUrl,
+          repoPath,
+          packFiles
+        });
+        
+      } catch (error) {
+        console.error('Error loading GitLab packs:', error);
+        this.showGitLabStatus(`❌ Error: ${error.message}`, 'error');
+      } finally {
+        loadBtn.disabled = false;
+        loadBtn.textContent = 'Load Internal Packs';
+      }
+    });
+    
+    // Load saved GitLab config (if any)
+    const savedConfig = storageManager.getGitLabConfig();
+    if (savedConfig) {
+      document.getElementById('gitlab-url').value = savedConfig.gitlabUrl || '';
+      document.getElementById('gitlab-repo').value = savedConfig.repoPath || '';
+      document.getElementById('gitlab-packs').value = savedConfig.packFiles?.join('\n') || '';
+    }
+    
+    // Initialize OAuth if configured (moved to end of setupGitLabLoader)
+    this.initializeOAuth();
+  }
+
+  /**
+   * Initialize OAuth authentication
+   */
+  initializeOAuth() {
+    const gitlabConfig = window.quizConfig?.gitlab;
+    if (gitlabConfig?.url && gitlabConfig?.oauthAppId) {
+      const oauth = new GitLabOAuth(gitlabConfig.url, gitlabConfig.oauthAppId);
+      
+      // Store config for callback page
+      sessionStorage.setItem('gitlab_oauth_config', JSON.stringify(gitlabConfig));
+      
+      // Set up OAuth buttons
+      this.setupOAuthButtons(oauth);
+      
+      // Check if already authenticated
+      if (oauth.isAuthenticated()) {
+        this.updateAuthStatus(oauth);
+        // Auto-load packs if authenticated
+        this.autoLoadPacks(oauth);
+      }
+    } else {
+      // Hide GitLab loader section if not configured
+      const loaderSection = document.getElementById('gitlab-loader-section');
+      if (loaderSection) {
+        loaderSection.style.display = 'none';
+      }
+    }
+  }
+
+  /**
+   * Set up OAuth authentication buttons
+   */
+  setupOAuthButtons(oauth) {
+    const authBtn = document.getElementById('gitlab-auth-btn');
+    const logoutBtn = document.getElementById('gitlab-logout-btn');
+    const authStatus = document.getElementById('gitlab-auth-status');
+    
+    if (authBtn) {
+      // Clone to remove old listeners
+      const authBtnClone = authBtn.cloneNode(true);
+      authBtn.parentNode.replaceChild(authBtnClone, authBtn);
+      
+      authBtnClone.addEventListener('click', async () => {
+        try {
+          await oauth.startAuthFlow();
+        } catch (error) {
+          console.error('OAuth error:', error);
+          this.showGitLabStatus(`❌ Error: ${error.message}`, 'error');
+        }
+      });
+    }
+    
+    if (logoutBtn) {
+      // Clone to remove old listeners
+      const logoutBtnClone = logoutBtn.cloneNode(true);
+      logoutBtn.parentNode.replaceChild(logoutBtnClone, logoutBtn);
+      
+      logoutBtnClone.addEventListener('click', async () => {
+        // Clear token first
+        oauth.clearToken();
+        
+        // Clear secure packs from memory (they're still cached but won't be loaded)
+        questionPackManager.securePacks.clear();
+        
+        // Reload cached packs to ensure secure packs aren't loaded
+        await questionPackManager.loadCachedPacks();
+        
+        // Update UI to remove private categories (this will call setupEventListeners)
+        this.updateCategorySelector();
+        
+        // Update auth status (must be after clearToken to properly hide logout button)
+        await this.updateAuthStatus(oauth);
+        
+        this.showGitLabStatus('Logged out successfully. Private packs are no longer available.', 'info');
+      });
+    }
+    
+    // Update auth status on load
+    this.updateAuthStatus(oauth);
+  }
+
+  /**
+   * Update authentication status display
+   */
+  async updateAuthStatus(oauth) {
+    const authBtn = document.getElementById('gitlab-auth-btn');
+    const logoutBtn = document.getElementById('gitlab-logout-btn');
+    const authStatus = document.getElementById('gitlab-auth-status');
+    
+    if (!authBtn || !logoutBtn || !authStatus) return;
+    
+    const isAuthenticated = oauth.isAuthenticated();
+    
+    if (isAuthenticated) {
+      try {
+        const user = await oauth.getCurrentUser();
+        authStatus.style.display = 'block';
+        authStatus.style.backgroundColor = 'var(--success-bg, #d4edda)';
+        authStatus.style.color = 'var(--success-text, #155724)';
+        authStatus.textContent = `✅ Authenticated as ${user.name || user.username}`;
+        authStatus.style.display = 'block';
+        authBtn.style.display = 'none';
+        logoutBtn.style.display = 'inline-block';
+      } catch (error) {
+        console.error('Error getting user info:', error);
+        // Token might be invalid, clear it
+        oauth.clearToken();
+        authStatus.style.display = 'none';
+        authBtn.style.display = 'block';
+        logoutBtn.style.display = 'none';
+      }
+    } else {
+      // Not authenticated - hide logout button and status, show auth button
+      authStatus.style.display = 'none';
+      authBtn.style.display = 'block';
+      logoutBtn.style.display = 'none';
+    }
+  }
+
+  /**
+   * Auto-load packs after OAuth authentication
+   */
+  async autoLoadPacks(oauth) {
+    const gitlabConfig = window.quizConfig?.gitlab;
+    if (!gitlabConfig) return;
+    
+    // Get saved repo config or use defaults
+    const savedConfig = storageManager.getGitLabConfig();
+    const repoPath = savedConfig?.repoPath || gitlabConfig.defaultRepo || 'amsincla/quiz-packs-private';
+    const packFiles = savedConfig?.packFiles || ['packs/internal-basic-v1.json'];
+    
+    try {
+      const token = oauth.getStoredToken();
+      if (!token) return;
+      
+      await questionPackManager.loadFromGitLab(
+        gitlabConfig.url,
+        repoPath,
+        token,
+        packFiles
+      );
+      
+      // Reload cached packs now that we're authenticated
+      await questionPackManager.loadCachedPacks();
+      
+      this.updateCategorySelector();
+      this.showGitLabStatus('✅ Packs loaded automatically!', 'success');
+    } catch (error) {
+      console.error('Error auto-loading packs:', error);
+      // Don't show error - user can manually load
+    }
+  }
+
+  /**
+   * Show GitLab status message
+   */
+  showGitLabStatus(message, type) {
+    const statusDiv = document.getElementById('gitlab-status');
+    if (!statusDiv) return;
+    
+    statusDiv.textContent = message;
+    statusDiv.style.display = 'block';
+    
+    // Set color based on type
+    if (type === 'success') {
+      statusDiv.style.backgroundColor = 'var(--success-bg, #d4edda)';
+      statusDiv.style.color = 'var(--success-text, #155724)';
+      statusDiv.style.borderColor = 'var(--success-border, #c3e6cb)';
+    } else if (type === 'error') {
+      statusDiv.style.backgroundColor = 'var(--error-bg, #f8d7da)';
+      statusDiv.style.color = 'var(--error-text, #721c24)';
+      statusDiv.style.borderColor = 'var(--error-border, #f5c6cb)';
+    } else {
+      statusDiv.style.backgroundColor = 'var(--info-bg, #d1ecf1)';
+      statusDiv.style.color = 'var(--info-text, #0c5460)';
+      statusDiv.style.borderColor = 'var(--info-border, #bee5eb)';
     }
   }
 }

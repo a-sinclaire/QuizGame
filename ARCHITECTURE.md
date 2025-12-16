@@ -18,6 +18,8 @@ A browser-based quiz game designed to run on GitHub Pages, serving as both an as
 - [x] Categories/Modules (organize questions by module/section, category selection)
 - [x] Difficulty progression (automatic progression easy → medium → hard)
 - [x] Basic responsive design (mobile-friendly layout)
+- [x] Dynamic Question Packs (built-in, secure API/GitLab, custom upload)
+- [x] GitLab OAuth Authentication (secure access to private question packs)
 
 ### ⏳ Partially Implemented
 - [ ] Mobile-friendly design (responsive layout done, but no swipe gestures)
@@ -270,6 +272,14 @@ The quiz engine maintains state including:
 - `questions/index.js` acts as registry, providing filtering functions
 - UI provides category selector alongside difficulty selector
 - Quiz engine filters questions by selected category and difficulty
+
+#### Dynamic Question Packs
+- **Built-in Packs**: Public questions bundled with the application
+- **Secure Packs**: Private questions loaded from GitLab repositories via OAuth
+- **Custom Packs**: User-uploaded JSON question packs
+- Pack manager (`question-packs.js`) handles loading, caching, and merging packs
+- Secure packs require GitLab OAuth authentication
+- Packs are cached in IndexedDB for offline access (secure packs only when authenticated)
 
 #### Customizing Scoring
 - Points system is configurable per question

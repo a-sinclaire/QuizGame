@@ -4,7 +4,10 @@ const STORAGE_KEYS = {
   HIGH_SCORES: 'quiz_high_scores',
   STATISTICS: 'quiz_statistics',
   INCOMPLETE_QUIZ: 'quiz_incomplete',
-  REPORTS: 'quiz_reports'
+  REPORTS: 'quiz_reports',
+  GITLAB_CONFIG: 'quiz_gitlab_config',
+  CACHED_PACKS: 'quiz_cached_packs',
+  PACK_PREFERENCES: 'quiz_pack_preferences'
 };
 
 export class StorageManager {
@@ -251,6 +254,155 @@ export class StorageManager {
   exportReports() {
     const reports = this.getReports();
     return JSON.stringify(reports, null, 2);
+  }
+
+  /**
+   * Save GitLab configuration (without token for security)
+   * @param {Object} config - GitLab config object
+   */
+  saveGitLabConfig(config) {
+    try {
+      // Don't save token for security
+      const safeConfig = {
+        gitlabUrl: config.gitlabUrl,
+        repoPath: config.repoPath,
+        packFiles: config.packFiles
+      };
+      localStorage.setItem(STORAGE_KEYS.GITLAB_CONFIG, JSON.stringify(safeConfig));
+      return true;
+    } catch (error) {
+      console.error('Error saving GitLab config:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Get GitLab configuration
+   * @returns {Object|null} GitLab config or null
+   */
+  getGitLabConfig() {
+    try {
+      const data = localStorage.getItem(STORAGE_KEYS.GITLAB_CONFIG);
+      return data ? JSON.parse(data) : null;
+    } catch (error) {
+      console.error('Error reading GitLab config:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Save cached pack to IndexedDB (fallback to localStorage if IndexedDB unavailable)
+   * @param {string} packId - Pack identifier
+   * @param {Object} cacheData - Cache data object
+   */
+  async saveCachedPack(packId, cacheData) {
+    try {
+      // Use IndexedDB if available, otherwise localStorage
+      if ('indexedDB' in window) {
+        // TODO: Implement IndexedDB storage for larger packs
+        // For now, use localStorage
+      }
+      
+      const cachedPacks = this.getCachedPacks();
+      cachedPacks[packId] = cacheData;
+      localStorage.setItem(STORAGE_KEYS.CACHED_PACKS, JSON.stringify(cachedPacks));
+      return true;
+    } catch (error) {
+      console.error('Error saving cached pack:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Get all cached packs
+   * @returns {Object} Object of cached packs (packId -> cacheData)
+   */
+  getCachedPacks() {
+    try {
+      const data = localStorage.getItem(STORAGE_KEYS.CACHED_PACKS);
+      return data ? JSON.parse(data) : {};
+    } catch (error) {
+      console.error('Error reading cached packs:', error);
+      return {};
+    }
+  }
+
+  /**
+   * Remove cached pack
+   * @param {string} packId - Pack identifier
+   */
+  async removeCachedPack(packId) {
+    try {
+      const cachedPacks = this.getCachedPacks();
+      delete cachedPacks[packId];
+      localStorage.setItem(STORAGE_KEYS.CACHED_PACKS, JSON.stringify(cachedPacks));
+      return true;
+    } catch (error) {
+      console.error('Error removing cached pack:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Save pack preference (enabled/disabled)
+   * @param {string} packId - Pack identifier
+   * @param {boolean} enabled - Enabled state
+   */
+  savePackPreference(packId, enabled) {
+    try {
+      const preferences = this.getPackPreferences();
+      preferences[packId] = enabled;
+      localStorage.setItem(STORAGE_KEYS.PACK_PREFERENCES, JSON.stringify(preferences));
+      return true;
+    } catch (error) {
+      console.error('Error saving pack preference:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Get pack preference
+   * @param {string} packId - Pack identifier
+   * @returns {boolean|null} Enabled state or null if not set
+   */
+  getPackPreference(packId) {
+    try {
+      const preferences = this.getPackPreferences();
+      return preferences[packId] !== undefined ? preferences[packId] : null;
+    } catch (error) {
+      console.error('Error reading pack preference:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Get all pack preferences
+   * @returns {Object} Object of pack preferences (packId -> enabled)
+   */
+  getPackPreferences() {
+    try {
+      const data = localStorage.getItem(STORAGE_KEYS.PACK_PREFERENCES);
+      return data ? JSON.parse(data) : {};
+    } catch (error) {
+      console.error('Error reading pack preferences:', error);
+      return {};
+    }
+  }
+
+  /**
+   * Remove pack preference
+   * @param {string} packId - Pack identifier
+   */
+  removePackPreference(packId) {
+    try {
+      const preferences = this.getPackPreferences();
+      delete preferences[packId];
+      localStorage.setItem(STORAGE_KEYS.PACK_PREFERENCES, JSON.stringify(preferences));
+      return true;
+    } catch (error) {
+      console.error('Error removing pack preference:', error);
+      return false;
+    }
   }
 
   /**

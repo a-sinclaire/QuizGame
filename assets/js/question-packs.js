@@ -96,6 +96,74 @@ class QuestionPackManager {
   }
 
   /**
+   * Load a question pack from GitLab private repository
+   * @param {string} gitlabUrl - GitLab instance URL (e.g., https://gitlab.cee.redhat.com)
+   * @param {string} repoPath - Repository path (e.g., username/repo-name or group/repo-name)
+   * @param {string} token - GitLab personal access token
+   * @param {string|Array<string>} packFiles - Path(s) to pack JSON file(s) in repository
+   * @returns {Promise<Object|Array<Object>>} Pack data or array of pack data
+   */
+  async loadFromGitLab(gitlabUrl, repoPath, token, packFiles) {
+    const files = Array.isArray(packFiles) ? packFiles : [packFiles];
+    const loadedPacks = [];
+
+    for (const packFile of files) {
+      try {
+        // Encode repository path and file path for URL
+        const encodedRepoPath = encodeURIComponent(repoPath);
+        const encodedFilePath = encodeURIComponent(packFile);
+        
+        // GitLab API endpoint for raw file content
+        const fileUrl = `${gitlabUrl}/api/v4/projects/${encodedRepoPath}/repository/files/${encodedFilePath}/raw`;
+        
+        const response = await fetch(fileUrl, {
+          headers: {
+            'PRIVATE-TOKEN': token
+          }
+        });
+
+        if (!response.ok) {
+          if (response.status === 401) {
+            throw new Error(`Unauthorized: Invalid GitLab token or insufficient permissions for ${packFile}`);
+          }
+          if (response.status === 404) {
+            throw new Error(`Not found: Pack file ${packFile} not found in repository or you don't have access`);
+          }
+          throw new Error(`Failed to load pack ${packFile}: ${response.status} ${response.statusText}`);
+        }
+
+        const packData = await response.json();
+        this.validatePackStructure(packData);
+        
+        const packId = packData.packId || `gitlab-${Date.now()}`;
+        
+        // Store in secure packs (from API)
+        this.securePacks.set(packId, packData.categories);
+        this.packMetadata.set(packId, {
+          ...packData.metadata,
+          packId,
+          packSource: 'api',
+          enabled: true,
+          author: packData.metadata?.author || null,
+          contactEmail: packData.metadata?.contactEmail || null,
+          gitlabRepo: repoPath,
+          gitlabFile: packFile
+        });
+
+        // Cache in IndexedDB with expiration (7 days)
+        await this.cachePack(packId, packData, 'api');
+
+        loadedPacks.push(packData);
+      } catch (error) {
+        console.error(`Error loading pack ${packFile} from GitLab:`, error);
+        throw error;
+      }
+    }
+
+    return files.length === 1 ? loadedPacks[0] : loadedPacks;
+  }
+
+  /**
    * Load a custom question pack from uploaded file
    * @param {File} file - Uploaded JSON file
    * @returns {Promise<Object>} Pack data
@@ -211,22 +279,46 @@ class QuestionPackManager {
 
   /**
    * Get all questions from enabled packs, merged by category
+   * Only includes secure packs if user is authenticated
    * @returns {Object} Merged question registry (category -> questions[])
    */
   getMergedQuestions() {
     const merged = {};
+    const isAuthenticated = this.checkAuthentication();
 
     // Helper to merge questions into registry
     const mergePack = (packCategories) => {
+      if (!packCategories || typeof packCategories !== 'object') {
+        console.warn('Invalid packCategories structure:', packCategories);
+        return;
+      }
+      
       for (const [categoryId, categoryData] of Object.entries(packCategories)) {
         if (!merged[categoryId]) {
           merged[categoryId] = [];
         }
-        merged[categoryId].push(...categoryData.questions);
+        
+        // Handle different pack structures
+        let questions = [];
+        if (Array.isArray(categoryData)) {
+          // If categoryData is already an array of questions
+          questions = categoryData;
+        } else if (categoryData && Array.isArray(categoryData.questions)) {
+          // If categoryData has a questions property (standard structure)
+          questions = categoryData.questions;
+        } else {
+          console.warn(`Invalid category structure for ${categoryId}:`, categoryData);
+          continue;
+        }
+        
+        // Ensure questions is an array before spreading
+        if (Array.isArray(questions) && questions.length > 0) {
+          merged[categoryId].push(...questions);
+        }
       }
     };
 
-    // Merge built-in packs
+    // Merge built-in packs (always available)
     for (const [packId, packCategories] of this.builtInPacks) {
       const metadata = this.packMetadata.get(packId);
       if (metadata && metadata.enabled) {
@@ -234,15 +326,17 @@ class QuestionPackManager {
       }
     }
 
-    // Merge secure packs
-    for (const [packId, packCategories] of this.securePacks) {
-      const metadata = this.packMetadata.get(packId);
-      if (metadata && metadata.enabled) {
-        mergePack(packCategories);
+    // Merge secure packs (only if authenticated)
+    if (isAuthenticated) {
+      for (const [packId, packCategories] of this.securePacks) {
+        const metadata = this.packMetadata.get(packId);
+        if (metadata && metadata.enabled) {
+          mergePack(packCategories);
+        }
       }
     }
 
-    // Merge custom packs
+    // Merge custom packs (always available - user uploaded)
     for (const [packId, packCategories] of this.customPacks) {
       const metadata = this.packMetadata.get(packId);
       if (metadata && metadata.enabled) {
@@ -348,16 +442,39 @@ class QuestionPackManager {
   }
 
   /**
-   * Load cached packs from IndexedDB on startup
+   * Load cached packs from storage on startup
+   * Only loads secure/API packs if user is authenticated
    */
   async loadCachedPacks() {
     try {
-      const cachedPacks = await storageManager.getCachedPacks();
+      const cachedPacksObj = storageManager.getCachedPacks();
+      
+      // cachedPacksObj is an object (packId -> cacheData), convert to array
+      const cachedPacks = Object.entries(cachedPacksObj).map(([packId, cached]) => ({
+        packId,
+        ...cached
+      }));
+      
+      // Check if user is authenticated (for secure packs)
+      const isAuthenticated = this.checkAuthentication();
       
       for (const cached of cachedPacks) {
         // Check expiration for API packs
         if (cached.expiresAt && Date.now() > cached.expiresAt) {
           await this.removeCachedPack(cached.packId);
+          continue;
+        }
+
+        // For secure/API packs, only load if authenticated
+        if (cached.source === 'api' && !isAuthenticated) {
+          // Don't load secure packs if not authenticated
+          // But keep metadata so we know they exist
+          this.packMetadata.set(cached.packId, {
+            packId: cached.packId,
+            packSource: 'api',
+            enabled: false, // Disabled until authenticated
+            requiresAuth: true
+          });
           continue;
         }
 
@@ -380,6 +497,30 @@ class QuestionPackManager {
     } catch (error) {
       console.warn('Failed to load cached packs:', error);
     }
+  }
+
+  /**
+   * Check if user is authenticated (has GitLab OAuth token)
+   * @returns {boolean} True if authenticated
+   */
+  checkAuthentication() {
+    if (typeof window === 'undefined') return false;
+    
+    // Check for GitLab OAuth token in sessionStorage
+    // Use the same keys as GitLabOAuth class
+    const token = sessionStorage.getItem('gitlab_oauth_token');
+    const expiry = sessionStorage.getItem('gitlab_token_expiry');
+    
+    if (!token || !expiry) {
+      return false;
+    }
+    
+    // Check if token expired (with 5 minute buffer)
+    if (Date.now() > parseInt(expiry) - 5 * 60 * 1000) {
+      return false;
+    }
+    
+    return true;
   }
 }
 

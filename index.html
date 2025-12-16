@@ -11,7 +11,12 @@
         // Update these values when deploying to GitHub Pages
         window.quizConfig = {
             repoOwner: 'a-sinclaire',  // Update this
-            repoName: 'QuizGame'         // Update this if different
+            repoName: 'QuizGame',         // Update this if different
+            gitlab: {
+                url: 'https://gitlab.cee.redhat.com',
+                oauthAppId: '385c5844bf2fc8a93b21871ba933f468fe6a2e51b6fc2b3dd02c72b085af77c8',
+                defaultRepo: 'amsincla/quiz-packs-private'  // Default repository path
+            }
         };
     </script>
 </head>
@@ -47,9 +52,9 @@
                     </div>
                 </div>
             </div>
-            <p>Select a category to begin (questions will progress from easy to hard):</p>
-            <div class="category-selector">
-                <button class="category-btn" data-category="random">Random (All Categories)</button>
+            <p>Select a question pack to begin (questions will progress from easy to hard):</p>
+            <div class="category-selector" id="category-selector">
+                <button class="category-btn" data-category="random">Random (All Question Packs)</button>
                 <button class="category-btn" data-category="test-pack">Test Pack</button>
                 <!-- App-interface categories are disabled - uncomment to enable:
                 <button class="category-btn" data-category="fundamentals">Fundamentals</button>
@@ -64,6 +69,56 @@
                 <button class="category-btn" data-category="external-resources">External Resources</button>
                 -->
             </div>
+            
+            <!-- GitLab Pack Loader -->
+            <details id="gitlab-loader-section" class="gitlab-loader-section" style="margin-top: 1.5rem;">
+                <summary style="cursor: pointer; color: var(--text-secondary); font-size: 0.9rem; padding: 0.5rem; border-radius: 4px; transition: background 0.2s;">
+                    🔒 GitLab Authentication (for private question packs)
+                </summary>
+                <div style="margin-top: 1rem; padding: 1rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-secondary);">
+                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">
+                        Authenticate with GitLab to access private question packs from your team's repository.
+                    </p>
+                    
+                    <!-- OAuth Authentication -->
+                    <div id="gitlab-oauth-section" style="margin-bottom: 1rem;">
+                        <div id="gitlab-auth-status" style="margin-bottom: 0.75rem; padding: 0.5rem 0.75rem; border-radius: 4px; background: var(--info-bg, #d1ecf1); color: var(--info-text, #0c5460); font-size: 0.85rem; display: none;"></div>
+                        <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                            <button id="gitlab-auth-btn" class="action-btn" style="flex: 1; min-width: 200px; padding: 0.5rem 1rem; font-size: 0.9rem;">🔐 Authenticate</button>
+                            <button id="gitlab-logout-btn" class="gitlab-logout-btn" style="display: none; padding: 0.4rem 0.75rem; font-size: 0.85rem; background: var(--error-bg, #f8d7da); color: var(--error-text, #721c24); border: 1px solid var(--error-color, #dc3545); border-radius: 4px; cursor: pointer; transition: all 0.2s;">Logout</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Manual Token Entry (Fallback) -->
+                    <details style="margin-top: 1rem;">
+                        <summary style="cursor: pointer; color: var(--text-secondary); font-size: 0.85rem;">Manual Token Entry (Advanced)</summary>
+                        <div class="gitlab-config" style="margin-top: 1rem;">
+                            <div style="margin-bottom: 1rem;">
+                                <label for="gitlab-url" style="display: block; margin-bottom: 0.25rem; font-weight: 500; font-size: 0.9rem;">GitLab URL:</label>
+                                <input type="text" id="gitlab-url" placeholder="https://gitlab.cee.redhat.com" value="https://gitlab.cee.redhat.com" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 4px; font-size: 0.9rem;">
+                            </div>
+                            <div style="margin-bottom: 1rem;">
+                                <label for="gitlab-repo" style="display: block; margin-bottom: 0.25rem; font-weight: 500; font-size: 0.9rem;">Repository Path:</label>
+                                <input type="text" id="gitlab-repo" placeholder="amsincla/quiz-packs-private" value="amsincla/quiz-packs-private" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 4px; font-size: 0.9rem;">
+                            </div>
+                            <div style="margin-bottom: 1rem;">
+                                <label for="gitlab-token" style="display: block; margin-bottom: 0.25rem; font-weight: 500; font-size: 0.9rem;">Personal Access Token:</label>
+                                <input type="password" id="gitlab-token" placeholder="glpat-..." style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 4px; font-size: 0.9rem;">
+                                <small style="display: block; margin-top: 0.25rem; color: var(--text-secondary); font-size: 0.8rem;">
+                                    Token requires <code>read_api</code> and <code>read_repository</code> scopes
+                                </small>
+                            </div>
+                            <div style="margin-bottom: 1rem;">
+                                <label for="gitlab-packs" style="display: block; margin-bottom: 0.25rem; font-weight: 500; font-size: 0.9rem;">Pack Files (one per line):</label>
+                                <textarea id="gitlab-packs" placeholder="packs/internal-basic-v1.json" rows="3" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 4px; font-family: monospace; font-size: 0.85rem;"></textarea>
+                            </div>
+                            <button id="load-gitlab-packs-btn" class="action-btn" style="width: 100%; padding: 0.5rem; font-size: 0.9rem;">Load Internal Packs</button>
+                        </div>
+                    </details>
+                    
+                    <div id="gitlab-status" style="margin-top: 1rem; padding: 0.5rem; border-radius: 4px; display: none; font-size: 0.85rem;"></div>
+                </div>
+            </details>
         </div>
 
         <!-- Quiz Screen -->

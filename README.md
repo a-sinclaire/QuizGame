@@ -17,6 +17,8 @@ A browser-based quiz game designed to run on GitHub Pages, serving as both an as
 - ✅ **Question Reporting**: Report issues with questions (creates GitHub issues)
 - ✅ **Animations**: Smooth transitions and visual feedback
 - ✅ **Mobile-Friendly**: Responsive design that works on all devices
+- ✅ **Dynamic Question Packs**: Support for built-in, secure (GitLab), and custom question packs
+- ✅ **GitLab OAuth**: Secure authentication for accessing private question packs
 
 ## Project Status
 

@@ -1091,6 +1091,12 @@ h2 {
         flex-direction: column;
     }
     
+    /* GitLab logout button styling */
+    .gitlab-logout-btn:hover {
+        background: var(--error-color, #dc3545) !important;
+        color: white !important;
+    }
+
     .category-btn {
         width: 100%;
     }

@@ -50,12 +50,29 @@ Object.values(questionRegistry).flat().forEach(question => {
 export function getQuestions(category = null, difficulty = null) {
   let questions = [];
   
+  // Get questions from built-in registry
   if (category) {
     // Get questions from specific category
     questions = questionRegistry[category] || [];
   } else {
     // Combine all categories
     questions = Object.values(questionRegistry).flat();
+  }
+  
+  // Also get questions from dynamically loaded packs (if pack manager is available)
+  if (typeof window !== 'undefined' && window.questionPackManager) {
+    const mergedQuestions = window.questionPackManager.getMergedQuestions();
+    
+    if (category) {
+      // Add questions from pack manager for this category
+      if (mergedQuestions[category]) {
+        questions = [...questions, ...mergedQuestions[category]];
+      }
+    } else {
+      // Add all questions from pack manager
+      const packQuestions = Object.values(mergedQuestions).flat();
+      questions = [...questions, ...packQuestions];
+    }
   }
   
   if (difficulty) {
