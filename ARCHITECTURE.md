@@ -27,6 +27,12 @@ A browser-based quiz game designed to run on GitHub Pages, serving as both an as
 - [ ] Analytics collection (aggregate user data - GitHub Actions approach)
 - [ ] Scoreboard (opt-in sharing with custom names)
 
+### 💡 Low Priority Feature Ideas
+- [ ] Return to home screen button during quiz (exit quiz mid-way)
+- [ ] Multiple save states per category (treat each category as separate quiz, resume any)
+- [ ] Question count indicator (show how many questions will be given before starting)
+- [ ] Difficulty selection (allow choosing specific difficulty instead of auto-progression)
+
 ## Project Structure
 
 ```

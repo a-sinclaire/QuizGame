@@ -28,6 +28,10 @@
     --radius-sm: 4px;
     --radius-md: 8px;
     --radius-lg: 12px;
+    
+    /* Animations */
+    --animation-duration: 0.3s;
+    --animation-easing: ease-in-out;
 }
 
 body {
@@ -188,10 +192,76 @@ h2 {
 /* Screen Management */
 .screen {
     display: none;
+    animation: fadeIn var(--animation-duration) var(--animation-easing);
 }
 
 .screen.active {
     display: block;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideOut {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+}
+
+.question-container {
+    animation: fadeIn var(--animation-duration) var(--animation-easing);
+}
+
+.question-container.slide-out {
+    animation: slideOut var(--animation-duration) var(--animation-easing);
+}
+
+.question-container.slide-in {
+    animation: slideIn var(--animation-duration) var(--animation-easing);
 }
 
 /* Start Screen */
@@ -335,8 +405,26 @@ h2 {
     color: var(--primary-color);
 }
 
+#current-score {
+    transition: all 0.3s var(--animation-easing);
+}
+
+#current-score.score-update {
+    animation: pulse 0.5s var(--animation-easing);
+    color: var(--success-color);
+}
+
 .question-container {
     margin-top: var(--spacing-lg);
+    animation: fadeIn var(--animation-duration) var(--animation-easing);
+}
+
+.question-container.slide-out {
+    animation: slideOut var(--animation-duration) var(--animation-easing);
+}
+
+.question-container.slide-in {
+    animation: slideIn var(--animation-duration) var(--animation-easing);
 }
 
 .question-header {
@@ -392,12 +480,22 @@ h2 {
     border: 2px solid var(--border-color);
     border-radius: var(--radius-md);
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.2s var(--animation-easing);
+    animation: scaleIn 0.2s var(--animation-easing);
+    animation-fill-mode: both;
 }
+
+.option-btn:nth-child(1) { animation-delay: 0.05s; }
+.option-btn:nth-child(2) { animation-delay: 0.1s; }
+.option-btn:nth-child(3) { animation-delay: 0.15s; }
+.option-btn:nth-child(4) { animation-delay: 0.2s; }
+.option-btn:nth-child(5) { animation-delay: 0.25s; }
 
 .option-btn:hover:not(:disabled) {
     border-color: var(--primary-color);
     background-color: #f0f7ff;
+    transform: translateX(4px) scale(1.02);
+    box-shadow: 0 2px 8px rgba(74, 144, 226, 0.2);
 }
 
 .option-btn:disabled {
@@ -409,12 +507,14 @@ h2 {
     background-color: #d4edda;
     border-color: var(--success-color);
     color: #155724;
+    animation: pulse 0.5s var(--animation-easing);
 }
 
 .option-btn.incorrect {
     background-color: #f8d7da;
     border-color: var(--error-color);
     color: #721c24;
+    animation: pulse 0.5s var(--animation-easing);
 }
 
 .hint-container {

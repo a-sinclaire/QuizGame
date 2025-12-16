@@ -136,6 +136,15 @@ export class UIController {
     }
     console.log(`  Question: ${question.id}, Difficulty: ${question.difficulty}`);
 
+    // Add slide animation
+    const questionContainer = document.querySelector('.question-container');
+    if (questionContainer) {
+      questionContainer.classList.remove('slide-out', 'slide-in');
+      // Trigger reflow
+      void questionContainer.offsetWidth;
+      questionContainer.classList.add('slide-in');
+    }
+
     // Update progress
     this.updateProgress();
     
@@ -288,7 +297,20 @@ export class UIController {
    * Update score display
    */
   updateScore() {
-    this.currentScore.textContent = this.quizEngine.score;
+    if (this.currentScore) {
+      const oldScore = parseInt(this.currentScore.textContent) || 0;
+      const newScore = this.quizEngine.score;
+      
+      this.currentScore.textContent = newScore;
+      
+      // Animate score update if it increased
+      if (newScore > oldScore) {
+        this.currentScore.classList.add('score-update');
+        setTimeout(() => {
+          this.currentScore.classList.remove('score-update');
+        }, 500);
+      }
+    }
   }
 
   /**
