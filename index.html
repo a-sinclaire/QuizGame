@@ -64,13 +64,55 @@
         <div id="results-screen" class="screen">
             <h2>Quiz Complete!</h2>
             <div class="results-summary">
-                <p>Final Score: <span id="final-score">0</span> points</p>
-                <p>Correct: <span id="correct-count">0</span> / <span id="total-count">0</span></p>
-                <p>Percentage: <span id="percentage">0</span>%</p>
+                <div class="score-highlight">
+                    <p class="score-value"><span id="final-score">0</span> points</p>
+                    <p class="score-details">Correct: <span id="correct-count">0</span> / <span id="total-count">0</span> (<span id="percentage">0</span>%)</p>
+                </div>
+                
+                <div id="high-score-indicator" class="high-score-indicator" style="display: none;">
+                    🏆 New High Score!
+                </div>
+                
+                <div class="results-breakdown">
+                    <h3>Breakdown by Difficulty</h3>
+                    <div class="breakdown-stats">
+                        <div class="breakdown-item">
+                            <span class="breakdown-label">Easy:</span>
+                            <span id="easy-stats" class="breakdown-value">-</span>
+                        </div>
+                        <div class="breakdown-item">
+                            <span class="breakdown-label">Medium:</span>
+                            <span id="medium-stats" class="breakdown-value">-</span>
+                        </div>
+                        <div class="breakdown-item">
+                            <span class="breakdown-label">Hard:</span>
+                            <span id="hard-stats" class="breakdown-value">-</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="overall-stats" id="overall-stats" style="display: none;">
+                    <h3>Your Overall Statistics</h3>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <span class="stat-label">Total Quizzes:</span>
+                            <span id="total-quizzes" class="stat-value">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Total Questions:</span>
+                            <span id="total-questions-stat" class="stat-value">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Overall Accuracy:</span>
+                            <span id="overall-accuracy" class="stat-value">0%</span>
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="results-actions">
                 <button id="restart-btn" class="action-btn">Take Another Quiz</button>
                 <button id="review-btn" class="action-btn">Review Answers</button>
+                <button id="reset-btn" class="action-btn reset-btn">Reset All Data</button>
             </div>
         </div>
     </div>

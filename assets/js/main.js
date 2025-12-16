@@ -4,6 +4,7 @@
 import { QuizEngine } from './quiz-engine.js';
 import { UIController } from './ui-controller.js';
 import { getCategories } from './questions/index.js';
+import { storageManager } from './storage.js';
 
 class QuizApp {
   constructor() {
@@ -33,6 +34,10 @@ class QuizApp {
       // Placeholder for review functionality
       console.log('Review functionality coming soon');
       this.restart();
+    };
+
+    this.uiController.onReset = () => {
+      this.resetAllData();
     };
 
     // Set up UI event listeners
@@ -107,8 +112,64 @@ class QuizApp {
     if (hasMore) {
       this.uiController.renderQuizScreen();
     } else {
+      // Quiz complete - save results and show results screen
+      this.saveQuizResults();
       this.uiController.showResults();
     }
+  }
+
+  /**
+   * Save quiz results to storage
+   */
+  saveQuizResults() {
+    if (!storageManager.isAvailable()) {
+      console.warn('LocalStorage not available');
+      return;
+    }
+
+    const results = this.quizEngine.getResults();
+    const category = results.category || 'random';
+    
+    // Check if this is a new high score BEFORE saving
+    const bestScore = storageManager.getBestScore(category);
+    console.log('High score check:', { 
+      category, 
+      currentScore: results.score, 
+      bestScore: bestScore ? bestScore.score : null,
+      bestScoreObj: bestScore 
+    });
+    
+    // Only show high score indicator if:
+    // 1. There's no previous best score AND current score > 0 (first quiz with a score), OR
+    // 2. Current score beats the previous best score
+    const shouldShowHighScore = bestScore 
+      ? results.score > bestScore.score 
+      : results.score > 0;
+    
+    console.log('Should show high score indicator:', shouldShowHighScore);
+    
+    storageManager.saveHighScore(category, {
+      score: results.score,
+      totalPoints: results.totalPoints,
+      correctCount: results.correctCount,
+      totalQuestions: results.totalQuestions,
+      percentage: results.percentage,
+      difficulty: results.difficulty
+    });
+    
+    // Update statistics
+    storageManager.updateStatistics({
+      category: category,
+      score: results.score,
+      totalQuestions: results.totalQuestions,
+      correctCount: results.correctCount
+    });
+    
+    // Clear any incomplete quiz
+    storageManager.clearIncompleteQuiz();
+    
+    // Pass results to UI controller for display (only show indicator if actually beat previous high)
+    this.uiController.setQuizResults(results, shouldShowHighScore);
   }
 
   /**
@@ -117,6 +178,20 @@ class QuizApp {
   restart() {
     this.quizEngine.reset();
     this.uiController.renderStartScreen();
+  }
+
+  /**
+   * Reset all stored data
+   */
+  resetAllData() {
+    if (confirm('Are you sure you want to reset all saved data? This will delete all high scores and statistics.')) {
+      if (storageManager.resetAll()) {
+        alert('All data has been reset.');
+        this.restart();
+      } else {
+        alert('Error resetting data.');
+      }
+    }
   }
 }
 

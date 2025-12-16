@@ -36,8 +36,21 @@ export class UIController {
     this.correctCount = document.getElementById('correct-count');
     this.totalCount = document.getElementById('total-count');
     this.percentage = document.getElementById('percentage');
+    this.highScoreIndicator = document.getElementById('high-score-indicator');
+    this.easyStats = document.getElementById('easy-stats');
+    this.mediumStats = document.getElementById('medium-stats');
+    this.hardStats = document.getElementById('hard-stats');
+    this.overallStats = document.getElementById('overall-stats');
+    this.totalQuizzes = document.getElementById('total-quizzes');
+    this.totalQuestionsStat = document.getElementById('total-questions-stat');
+    this.overallAccuracy = document.getElementById('overall-accuracy');
     this.restartBtn = document.getElementById('restart-btn');
     this.reviewBtn = document.getElementById('review-btn');
+    this.resetBtn = document.getElementById('reset-btn');
+    
+    // Store current results for display
+    this.currentResults = null;
+    this.isNewHighScore = false;
   }
 
   /**
@@ -247,16 +260,101 @@ export class UIController {
   }
 
   /**
+   * Set quiz results data (called from main.js after saving)
+   * @param {Object} results - Quiz results
+   * @param {boolean} isNewHighScore - Whether this is a new high score
+   */
+  setQuizResults(results, isNewHighScore = false) {
+    this.currentResults = results;
+    this.isNewHighScore = isNewHighScore;
+  }
+
+  /**
    * Show results screen
    */
   showResults() {
     this.showScreen('results-screen');
-    const results = this.quizEngine.getResults();
     
+    if (!this.currentResults) {
+      this.currentResults = this.quizEngine.getResults();
+    }
+    
+    const results = this.currentResults;
+    
+    // Basic score display
     this.finalScore.textContent = results.score;
     this.correctCount.textContent = results.correctCount;
     this.totalCount.textContent = results.totalQuestions;
     this.percentage.textContent = results.percentage;
+    
+    // Show high score indicator
+    if (this.isNewHighScore && this.highScoreIndicator) {
+      this.highScoreIndicator.style.display = 'block';
+    } else if (this.highScoreIndicator) {
+      this.highScoreIndicator.style.display = 'none';
+    }
+    
+    // Calculate breakdown by difficulty
+    if (this.easyStats && this.mediumStats && this.hardStats) {
+      const breakdown = this.calculateDifficultyBreakdown(results.answers);
+      this.easyStats.textContent = breakdown.easy;
+      this.mediumStats.textContent = breakdown.medium;
+      this.hardStats.textContent = breakdown.hard;
+    }
+    
+    // Load and display overall statistics
+    this.displayOverallStats();
+  }
+
+  /**
+   * Calculate breakdown by difficulty
+   * @param {Array} answers - Array of answer objects
+   * @returns {Object} Breakdown object
+   */
+  calculateDifficultyBreakdown(answers) {
+    const breakdown = { easy: { correct: 0, total: 0 }, medium: { correct: 0, total: 0 }, hard: { correct: 0, total: 0 } };
+    
+    answers.forEach((answer, index) => {
+      const question = this.quizEngine.questions[index];
+      if (question) {
+        const diff = question.difficulty;
+        if (breakdown[diff]) {
+          breakdown[diff].total++;
+          if (answer.isCorrect) {
+            breakdown[diff].correct++;
+          }
+        }
+      }
+    });
+    
+    return {
+      easy: `${breakdown.easy.correct}/${breakdown.easy.total}`,
+      medium: `${breakdown.medium.correct}/${breakdown.medium.total}`,
+      hard: `${breakdown.hard.correct}/${breakdown.hard.total}`
+    };
+  }
+
+  /**
+   * Display overall statistics
+   */
+  displayOverallStats() {
+    // Import storage manager dynamically to avoid circular dependency
+    import('./storage.js').then(({ storageManager }) => {
+      const stats = storageManager.getStatistics();
+      
+      if (stats.totalQuizzes > 0 && this.overallStats) {
+        this.overallStats.style.display = 'block';
+        if (this.totalQuizzes) this.totalQuizzes.textContent = stats.totalQuizzes;
+        if (this.totalQuestionsStat) this.totalQuestionsStat.textContent = stats.totalQuestions;
+        
+        const accuracy = stats.totalQuestions > 0 
+          ? Math.round((stats.correctAnswers / stats.totalQuestions) * 100)
+          : 0;
+        if (this.overallAccuracy) this.overallAccuracy.textContent = `${accuracy}%`;
+      } else if (this.overallStats) {
+        this.overallStats.style.display = 'none';
+      }
+    });
   }
 
   /**
@@ -302,6 +400,21 @@ export class UIController {
         this.onReview();
       }
     });
+
+    // Reset button - clone to remove old listeners
+    if (this.resetBtn) {
+      const resetBtnClone = this.resetBtn.cloneNode(true);
+      this.resetBtn.parentNode.replaceChild(resetBtnClone, this.resetBtn);
+      this.resetBtn = resetBtnClone;
+      
+      this.resetBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (this.onReset) {
+          this.onReset();
+        }
+      });
+    }
   }
 }
 
