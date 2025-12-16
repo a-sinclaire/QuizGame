@@ -75,6 +75,10 @@ export class QuizEngine {
     this.questions = questions;
     this.startTime = Date.now();
     
+    console.log(`Quiz started with ${this.questions.length} questions:`);
+    console.log(`  Easy: ${easyQuestions.length}, Medium: ${mediumQuestions.length}, Hard: ${hardQuestions.length}`);
+    console.log('Question order:', this.questions.map(q => `${q.difficulty}-${q.id}`));
+    
     return this.questions.length;
   }
 
@@ -174,8 +178,11 @@ export class QuizEngine {
    * @returns {boolean} True if there are more questions, false if quiz is complete
    */
   nextQuestion() {
+    console.log(`Moving from question ${this.currentQuestionIndex} to ${this.currentQuestionIndex + 1}`);
     this.currentQuestionIndex++;
-    return this.currentQuestionIndex < this.questions.length;
+    const hasMore = this.currentQuestionIndex < this.questions.length;
+    console.log(`  Has more questions: ${hasMore}, Total: ${this.questions.length}`);
+    return hasMore;
   }
 
   /**

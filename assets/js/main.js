@@ -56,14 +56,19 @@ class QuizApp {
       return;
     }
 
-    // Clear existing buttons (except Random)
+    // Store the Random button's text/content
     const randomBtn = categorySelector.querySelector('[data-category="random"]');
+    const randomBtnText = randomBtn ? randomBtn.textContent : 'Random (All Categories)';
+    
+    // Clear all buttons
     categorySelector.innerHTML = '';
     
-    // Add Random button first
-    if (randomBtn) {
-      categorySelector.appendChild(randomBtn);
-    }
+    // Create and add Random button
+    const randomButton = document.createElement('button');
+    randomButton.className = 'category-btn';
+    randomButton.dataset.category = 'random';
+    randomButton.textContent = randomBtnText;
+    categorySelector.appendChild(randomButton);
 
     // Add category buttons
     categories.forEach(category => {
@@ -74,7 +79,7 @@ class QuizApp {
       categorySelector.appendChild(btn);
     });
 
-    // Re-setup event listeners for new buttons
+    // Re-setup event listeners for all buttons (including Random)
     this.uiController.setupEventListeners();
   }
 

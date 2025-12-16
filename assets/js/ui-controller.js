@@ -69,11 +69,14 @@ export class UIController {
     this.showScreen('quiz-screen');
     this.answerSelected = false;
     
+    console.log(`Rendering question at index: ${this.quizEngine.currentQuestionIndex}`);
     const question = this.quizEngine.getCurrentQuestion();
     if (!question) {
+      console.log('No question found, showing results');
       this.showResults();
       return;
     }
+    console.log(`  Question: ${question.id}, Difficulty: ${question.difficulty}`);
 
     // Update progress
     this.updateProgress();
@@ -95,6 +98,42 @@ export class UIController {
     // Hide feedback and next button
     this.feedbackContainer.classList.remove('show', 'correct', 'incorrect');
     this.nextBtn.style.display = 'none';
+    this.nextBtn.disabled = false; // Ensure button is enabled for next question
+  }
+  
+  /**
+   * Set up next button listener (called separately to avoid duplicates)
+   */
+  setupNextButton() {
+    // Remove all existing event listeners by cloning
+    const oldBtn = this.nextBtn;
+    const nextBtnClone = oldBtn.cloneNode(true);
+    oldBtn.parentNode.replaceChild(nextBtnClone, oldBtn);
+    this.nextBtn = nextBtnClone;
+    
+    // Add single event listener
+    this.nextBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('Next button clicked, current index before:', this.quizEngine.currentQuestionIndex);
+      
+      // Prevent double-clicks
+      if (this.nextBtn.disabled) {
+        console.log('Next button already processing, ignoring click');
+        return;
+      }
+      
+      this.nextBtn.disabled = true;
+      
+      if (this.onNextQuestion) {
+        this.onNextQuestion();
+      }
+      
+      // Re-enable after a short delay to prevent rapid clicking
+      setTimeout(() => {
+        this.nextBtn.disabled = false;
+      }, 300);
+    });
   }
 
   /**
@@ -145,8 +184,9 @@ export class UIController {
     // Update score
     this.updateScore();
 
-    // Show next button
+    // Show next button and set up listener
     this.nextBtn.style.display = 'block';
+    this.setupNextButton(); // Set up listener when button becomes visible
   }
 
   /**
@@ -223,26 +263,31 @@ export class UIController {
    * Set up event listeners
    */
   setupEventListeners() {
-    // Category selection
-    this.categoryButtons.forEach(btn => {
-      btn.addEventListener('click', (e) => {
+    // Category selection - re-query buttons in case they were dynamically added
+    const categoryButtons = document.querySelectorAll('.category-btn');
+    categoryButtons.forEach(btn => {
+      // Remove any existing listeners by cloning
+      const newBtn = btn.cloneNode(true);
+      btn.parentNode.replaceChild(newBtn, btn);
+      
+      // Add new listener
+      newBtn.addEventListener('click', (e) => {
         const category = e.target.dataset.category;
+        console.log('Category selected:', category);
         // This will be handled by main.js
         if (this.onCategorySelected) {
           this.onCategorySelected(category);
         }
       });
     });
+    
+    // Update the reference
+    this.categoryButtons = document.querySelectorAll('.category-btn');
 
     // Hint button
     this.hintBtn.addEventListener('click', () => this.handleHintClick());
 
-    // Next button
-    this.nextBtn.addEventListener('click', () => {
-      if (this.onNextQuestion) {
-        this.onNextQuestion();
-      }
-    });
+    // Next button listener will be set up in renderQuizScreen to avoid duplicates
 
     // Restart button
     this.restartBtn.addEventListener('click', () => {
