@@ -56,12 +56,14 @@ QuizGame/
 │   │   ├── analytics.js      # Analytics collection and reporting
 │   │   ├── sound-manager.js  # Sound effects management
 │   │   ├── theme-manager.js  # Theme switching logic
+│   │   ├── question-packs.js  # Question pack manager (built-in, secure, custom)
+│   │   ├── gitlab-oauth.js   # GitLab OAuth 2.0 with PKCE authentication
 │   │   └── questions/
 │   │       ├── index.js      # Question registry and loader (getQuestions function)
 │   │       └── categories/   # Questions organized by category/module (flat structure)
-│   │           ├── module1.js # All difficulties for module1
-│   │           ├── module2.js # All difficulties for module2
+│   │           ├── test-pack.js # Test questions for development
 │   │           └── ...
+├── oauth-callback.html        # GitLab OAuth callback handler
 │   ├── sounds/               # Sound effect files
 │   │   ├── correct.mp3
 │   │   ├── incorrect.mp3
