@@ -44,3 +44,7 @@ assets/js/questions/categories/openshift.js
 assets/js/questions/categories/gitops.js
 assets/js/questions/categories/schemas.js
 assets/js/questions/categories/external-resources.js
+
+# Local test directories (not part of public repo)
+packs/
+quiz-packs-private/

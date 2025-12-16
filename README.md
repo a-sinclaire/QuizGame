@@ -68,6 +68,37 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed project structure and desi
    - Go to repository Issues → Labels
    - Create a label called `question-report` (optional, for organization)
 
+## GitLab OAuth Setup (for Private Question Packs)
+
+To enable secure access to private question packs from GitLab:
+
+1. **Create a GitLab OAuth Application**:
+   - Go to your GitLab instance → User Settings → Applications
+   - Create a new application with:
+     - Name: Quiz Game
+     - Redirect URI: `https://YOUR_USERNAME.github.io/QuizGame/oauth-callback.html`
+     - Scopes: `read_api`, `read_repository`
+   - Copy the Application ID
+
+2. **Configure the Quiz Game**:
+   - Edit `index.html`
+   - Update `window.quizConfig.gitlab` with your GitLab details:
+     ```javascript
+     gitlab: {
+         url: 'https://gitlab.example.com',
+         oauthAppId: 'YOUR_OAUTH_APP_ID',
+         defaultRepo: 'username/repo-name'
+     }
+     ```
+
+3. **Set Up Private Question Pack Repository**:
+   - Create a private GitLab repository for your question packs
+   - Add question pack JSON files (see `ARCHITECTURE.md` for format)
+   - Add team members with at least Reporter access
+   - See `quiz-packs-private/README.md` for detailed instructions
+
+For more details, see the [ARCHITECTURE.md](./ARCHITECTURE.md) file.
+
 The quiz will be available at: `https://YOUR_USERNAME.github.io/QuizGame/`
 
 ## Project Structure

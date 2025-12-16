@@ -50,36 +50,50 @@ Object.values(questionRegistry).flat().forEach(question => {
 export function getQuestions(category = null, difficulty = null) {
   let questions = [];
   
-  // Get questions from built-in registry
-  if (category) {
-    // Get questions from specific category
-    questions = questionRegistry[category] || [];
+  console.log(`[getQuestions] Called with category="${category}", difficulty="${difficulty}"`);
+  
+  // Try to get questions from pack manager first (includes built-in packs)
+  if (typeof window !== 'undefined' && window.questionPackManager) {
+    try {
+      const mergedQuestions = window.questionPackManager.getMergedQuestions();
+      console.log(`[getQuestions] Pack manager available, mergedQuestions:`, mergedQuestions);
+      
+      if (category) {
+        // Get questions from specific category
+        questions = mergedQuestions[category] || [];
+        console.log(`[getQuestions] Category "${category}" has ${questions.length} questions`);
+      } else {
+        // Combine all categories
+        questions = Object.values(mergedQuestions).flat();
+        console.log(`[getQuestions] All categories have ${questions.length} total questions`);
+      }
+    } catch (error) {
+      console.warn('[getQuestions] Error getting questions from pack manager, falling back to registry:', error);
+    }
   } else {
-    // Combine all categories
-    questions = Object.values(questionRegistry).flat();
+    console.log('[getQuestions] Pack manager not available, using registry fallback');
   }
   
-  // Also get questions from dynamically loaded packs (if pack manager is available)
-  if (typeof window !== 'undefined' && window.questionPackManager) {
-    const mergedQuestions = window.questionPackManager.getMergedQuestions();
-    
+  // Fallback to built-in registry if pack manager not available or returned no questions
+  if (questions.length === 0) {
+    console.log('[getQuestions] No questions from pack manager, using registry fallback');
     if (category) {
-      // Add questions from pack manager for this category
-      if (mergedQuestions[category]) {
-        questions = [...questions, ...mergedQuestions[category]];
-      }
+      questions = questionRegistry[category] || [];
+      console.log(`[getQuestions] Registry category "${category}" has ${questions.length} questions`);
     } else {
-      // Add all questions from pack manager
-      const packQuestions = Object.values(mergedQuestions).flat();
-      questions = [...questions, ...packQuestions];
+      questions = Object.values(questionRegistry).flat();
+      console.log(`[getQuestions] Registry all categories have ${questions.length} total questions`);
     }
   }
   
   if (difficulty) {
     // Filter by difficulty
+    const beforeFilter = questions.length;
     questions = questions.filter(q => q.difficulty === difficulty);
+    console.log(`[getQuestions] After filtering by difficulty "${difficulty}": ${beforeFilter} -> ${questions.length} questions`);
   }
   
+  console.log(`[getQuestions] Returning ${questions.length} questions`);
   return questions;
 }
 
@@ -107,6 +121,15 @@ export function getDifficulties() {
  * @returns {Object|null} Question object or null if not found
  */
 export function getQuestionById(questionId, category, difficulty) {
+  // Use question pack manager if available (includes secure packs)
+  if (window.questionPackManager) {
+    const question = window.questionPackManager.getQuestionById(questionId);
+    if (question) {
+      return question;
+    }
+  }
+  
+  // Fallback to built-in registry (backwards compatibility)
   let questions = [];
   
   if (category) {

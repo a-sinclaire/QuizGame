@@ -155,7 +155,10 @@ class QuestionPackManager {
 
         loadedPacks.push(packData);
       } catch (error) {
-        console.error(`Error loading pack ${packFile} from GitLab:`, error);
+        // Only log non-401/403 errors (401/403 are expected when token expires)
+        if (!error.message.includes('Unauthorized') && !error.message.includes('403')) {
+          console.error(`Error loading pack ${packFile} from GitLab:`, error);
+        }
         throw error;
       }
     }
@@ -348,6 +351,29 @@ class QuestionPackManager {
   }
 
   /**
+   * Get all available categories from all enabled packs
+   * @returns {Array} Array of category names
+   */
+  getMergedCategories() {
+    const mergedQuestions = this.getMergedQuestions();
+    return Object.keys(mergedQuestions);
+  }
+
+  /**
+   * Get a question by its ID from any enabled pack
+   * @param {string} questionId - Question ID
+   * @returns {Object|null} Question object or null if not found
+   */
+  getQuestionById(questionId) {
+    const mergedQuestions = this.getMergedQuestions();
+    for (const categoryQuestions of Object.values(mergedQuestions)) {
+      const found = categoryQuestions.find(q => q.id === questionId);
+      if (found) return found;
+    }
+    return null;
+  }
+
+  /**
    * Get all pack metadata
    * @returns {Array} Array of pack metadata objects
    */
@@ -468,13 +494,7 @@ class QuestionPackManager {
         // For secure/API packs, only load if authenticated
         if (cached.source === 'api' && !isAuthenticated) {
           // Don't load secure packs if not authenticated
-          // But keep metadata so we know they exist
-          this.packMetadata.set(cached.packId, {
-            packId: cached.packId,
-            packSource: 'api',
-            enabled: false, // Disabled until authenticated
-            requiresAuth: true
-          });
+          // Don't even keep metadata - completely hide them
           continue;
         }
 
@@ -482,17 +502,26 @@ class QuestionPackManager {
         this.validatePackStructure(packData);
 
         if (cached.source === 'api') {
-          this.securePacks.set(cached.packId, packData.categories);
+          // Only load secure packs if authenticated
+          if (isAuthenticated) {
+            this.securePacks.set(cached.packId, packData.categories);
+            this.packMetadata.set(cached.packId, {
+              ...packData.metadata,
+              packId: cached.packId,
+              packSource: cached.source,
+              enabled: storageManager.getPackPreference(cached.packId) !== false
+            });
+          }
+          // If not authenticated, skip entirely (already handled above)
         } else if (cached.source === 'upload') {
           this.customPacks.set(cached.packId, packData.categories);
+          this.packMetadata.set(cached.packId, {
+            ...packData.metadata,
+            packId: cached.packId,
+            packSource: cached.source,
+            enabled: storageManager.getPackPreference(cached.packId) !== false
+          });
         }
-
-        this.packMetadata.set(cached.packId, {
-          ...packData.metadata,
-          packId: cached.packId,
-          packSource: cached.source,
-          enabled: storageManager.getPackPreference(cached.packId) !== false
-        });
       }
     } catch (error) {
       console.warn('Failed to load cached packs:', error);

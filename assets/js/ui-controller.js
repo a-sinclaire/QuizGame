@@ -15,6 +15,10 @@ export class UIController {
    * Initialize DOM element references
    */
   initializeElements() {
+    console.log('[initializeElements] Initializing DOM element references...');
+    console.log('[initializeElements] document.readyState:', document.readyState);
+    console.log('[initializeElements] Checking if quiz-screen exists:', !!document.getElementById('quiz-screen'));
+    
     // Screens
     this.startScreen = document.getElementById('start-screen');
     this.quizScreen = document.getElementById('quiz-screen');
@@ -30,6 +34,40 @@ export class UIController {
     this.currentScore = document.getElementById('current-score');
     this.questionText = document.getElementById('question-text');
     this.optionsContainer = document.getElementById('options-container');
+    
+    console.log('[initializeElements] Quiz screen elements:', {
+      questionCounter: !!this.questionCounter,
+      progressFill: !!this.progressFill,
+      difficultyBadge: !!this.difficultyBadge,
+      currentScore: !!this.currentScore,
+      questionText: !!this.questionText,
+      optionsContainer: !!this.optionsContainer
+    });
+    
+    if (!this.questionText) {
+      console.error('[initializeElements] question-text element NOT FOUND in DOM!');
+      console.error('[initializeElements] All h2 elements:', document.querySelectorAll('h2'));
+    }
+    if (!this.optionsContainer) {
+      console.error('[initializeElements] options-container element NOT FOUND in DOM!');
+      console.error('[initializeElements] All divs with id:', Array.from(document.querySelectorAll('div[id]')).map(d => d.id));
+    }
+    
+    console.log('[initializeElements] Quiz screen elements:', {
+      questionCounter: !!this.questionCounter,
+      progressFill: !!this.progressFill,
+      difficultyBadge: !!this.difficultyBadge,
+      currentScore: !!this.currentScore,
+      questionText: !!this.questionText,
+      optionsContainer: !!this.optionsContainer
+    });
+    
+    if (!this.questionText) {
+      console.error('[initializeElements] question-text element NOT FOUND in DOM!');
+    }
+    if (!this.optionsContainer) {
+      console.error('[initializeElements] options-container element NOT FOUND in DOM!');
+    }
     this.hintBtn = document.getElementById('hint-btn');
     this.hintDisplay = document.getElementById('hint-display');
     this.feedbackContainer = document.getElementById('feedback-container');
@@ -109,6 +147,9 @@ export class UIController {
     const screen = document.getElementById(screenId);
     if (screen) {
       screen.classList.add('active');
+      console.log(`[showScreen] Activated screen: ${screenId}, has active class: ${screen.classList.contains('active')}`);
+    } else {
+      console.error(`[showScreen] Screen element not found: ${screenId}`);
     }
   }
 
@@ -136,6 +177,27 @@ export class UIController {
     }
     console.log(`  Question: ${question.id}, Difficulty: ${question.difficulty}`);
 
+    // Re-initialize elements if they're missing (DOM might not be ready)
+    if (!this.questionText || !document.getElementById('question-text')) {
+      console.warn('[renderQuizScreen] Re-initializing questionText element');
+      this.questionText = document.getElementById('question-text');
+    }
+    if (!this.optionsContainer || !document.getElementById('options-container')) {
+      console.warn('[renderQuizScreen] Re-initializing optionsContainer element');
+      this.optionsContainer = document.getElementById('options-container');
+    }
+    
+    if (!this.questionText) {
+      console.error('[renderQuizScreen] questionText element not found in DOM!');
+      console.error('[renderQuizScreen] Available elements:', document.querySelectorAll('#quiz-screen *'));
+      return;
+    }
+    if (!this.optionsContainer) {
+      console.error('[renderQuizScreen] optionsContainer element not found in DOM!');
+      console.error('[renderQuizScreen] Available elements:', document.querySelectorAll('#quiz-screen *'));
+      return;
+    }
+
     // Add slide animation
     const questionContainer = document.querySelector('.question-container');
     if (questionContainer) {
@@ -152,9 +214,11 @@ export class UIController {
     this.updateScore();
 
     // Render question
+    console.log(`[renderQuizScreen] Setting question text: "${question.question}"`);
     this.questionText.textContent = question.question;
 
     // Render options
+    console.log(`[renderQuizScreen] Rendering ${question.options.length} options`);
     this.renderOptions(question);
 
     // Reset hint display
@@ -213,6 +277,16 @@ export class UIController {
    * @param {Object} question - Question object
    */
   renderOptions(question) {
+    if (!this.optionsContainer) {
+      console.error('[renderOptions] optionsContainer not found!');
+      this.optionsContainer = document.getElementById('options-container');
+      if (!this.optionsContainer) {
+        console.error('[renderOptions] Still cannot find options-container element!');
+        return;
+      }
+    }
+    
+    console.log(`[renderOptions] Rendering ${question.options.length} options into container`);
     this.optionsContainer.innerHTML = '';
     
     question.options.forEach((option, index) => {
@@ -225,6 +299,8 @@ export class UIController {
       
       this.optionsContainer.appendChild(button);
     });
+    
+    console.log(`[renderOptions] Added ${this.optionsContainer.children.length} option buttons`);
   }
 
   /**
@@ -1112,6 +1188,8 @@ Breakdown:
       
       if (reportingInfo.method === 'github') {
         this.createGitHubIssue(reportData);
+      } else if (reportingInfo.method === 'gitlab') {
+        this.createGitLabIssue(reportData, reportingInfo);
       } else if (reportingInfo.method === 'email') {
         this.createEmailReport(reportData, reportingInfo.contactEmail, reportingInfo.packName);
       } else {
@@ -1165,8 +1243,23 @@ Breakdown:
       };
     }
     
-    // Secure API packs: check for contact email
+    // Secure API packs: try GitLab issue first, then email, then local storage
     if (packSource === 'api') {
+      const gitlabRepo = packMetadata?.gitlabRepo;
+      const gitlabUrl = window.quizConfig?.gitlab?.url;
+      
+      // If we have GitLab repo info, try to create GitLab issue
+      if (gitlabRepo && gitlabUrl) {
+        return {
+          method: 'gitlab',
+          contactEmail: packMetadata?.contactEmail || packMetadata?.metadata?.contactEmail || null,
+          packName: packMetadata?.packName || packMetadata?.metadata?.packName || 'Internal Pack',
+          gitlabRepo: gitlabRepo,
+          gitlabUrl: gitlabUrl
+        };
+      }
+      
+      // Fallback to email if contact email is available
       const contactEmail = packMetadata?.contactEmail || packMetadata?.metadata?.contactEmail;
       if (contactEmail) {
         return {
@@ -1175,6 +1268,7 @@ Breakdown:
           packName: packMetadata?.packName || packMetadata?.metadata?.packName || 'Internal Pack'
         };
       }
+      
       // No contact email: local storage only
       return {
         method: 'none',
@@ -1233,6 +1327,89 @@ This report was submitted from the quiz application.`);
     
     // Show confirmation
     alert(`Thank you for reporting this question! Opening email client to send report to ${contactEmail}...`);
+  }
+
+  /**
+   * Create GitLab issue for question report
+   * @param {Object} reportData - Report data object
+   * @param {Object} reportingInfo - Reporting info with GitLab details
+   */
+  async createGitLabIssue(reportData, reportingInfo) {
+    const gitlabUrl = reportingInfo.gitlabUrl;
+    const repoPath = reportingInfo.gitlabRepo;
+    
+    // Check if user is authenticated
+    const token = sessionStorage.getItem('gitlab_oauth_token');
+    if (!token) {
+      // Fallback to email if available
+      if (reportingInfo.contactEmail) {
+        this.createEmailReport(reportData, reportingInfo.contactEmail, reportingInfo.packName);
+        return;
+      }
+      // Otherwise just save locally
+      storageManager.saveReport(reportData);
+      alert('Thank you for reporting this question! Please authenticate with GitLab to create an issue, or your feedback has been saved locally.');
+      return;
+    }
+    
+    const reasonLabels = {
+      'incorrect': 'Question or answer is incorrect',
+      'unclear': 'Question is unclear or confusing',
+      'explanation': 'Explanation is confusing or wrong',
+      'typo': 'Typo or grammar error',
+      'other': 'Other issue'
+    };
+    
+    const title = `Question Report: ${reportData.questionId} (${reportData.difficulty})`;
+    const body = `## Question Report
+
+**Question ID:** ${reportData.questionId}
+**Category:** ${reportData.category || 'N/A'}
+**Difficulty:** ${reportData.difficulty}
+**Question Pack:** ${reportData.packId || 'N/A'}
+**Pack Source:** ${reportData.packSource || 'N/A'}
+**Reason:** ${reasonLabels[reportData.reason] || reportData.reason}
+
+**Question Text:**
+${reportData.question}
+
+**Additional Details:**
+${reportData.details || 'None provided'}
+
+---
+*This report was submitted from the quiz application.*`;
+    
+    try {
+      const encodedRepoPath = encodeURIComponent(repoPath);
+      const response = await fetch(`${gitlabUrl}/api/v4/projects/${encodedRepoPath}/issues`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'PRIVATE-TOKEN': token
+        },
+        body: JSON.stringify({
+          title: title,
+          description: body,
+          labels: 'question-report'
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to create GitLab issue: ${response.statusText}`);
+      }
+      
+      const issue = await response.json();
+      alert(`Thank you for reporting this question! GitLab issue #${issue.iid} has been created.\n\nView it here: ${issue.web_url}`);
+    } catch (error) {
+      console.error('Error creating GitLab issue:', error);
+      // Fallback to email if available
+      if (reportingInfo.contactEmail) {
+        this.createEmailReport(reportData, reportingInfo.contactEmail, reportingInfo.packName);
+      } else {
+        storageManager.saveReport(reportData);
+        alert(`Thank you for reporting this question! Unable to create GitLab issue: ${error.message}. Your feedback has been saved locally.`);
+      }
+    }
   }
 
   /**

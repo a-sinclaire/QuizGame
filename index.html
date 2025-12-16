@@ -71,11 +71,12 @@
             </div>
             
             <!-- GitLab Pack Loader -->
-            <details id="gitlab-loader-section" class="gitlab-loader-section" style="margin-top: 1.5rem;">
-                <summary style="cursor: pointer; color: var(--text-secondary); font-size: 0.9rem; padding: 0.5rem; border-radius: 4px; transition: background 0.2s;">
-                    🔒 GitLab Authentication (for private question packs)
-                </summary>
-                <div style="margin-top: 1rem; padding: 1rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-secondary);">
+            <div style="display: flex; align-items: flex-start; gap: 0.5rem; margin-top: 1.5rem; flex-wrap: wrap;">
+                <details id="gitlab-loader-section" class="gitlab-loader-section" style="flex: 1; min-width: 200px;">
+                    <summary style="cursor: pointer; color: var(--text-secondary); font-size: 0.9rem; padding: 0.5rem; border-radius: 4px; transition: background 0.2s;">
+                        🔒 GitLab Authentication (for private question packs)
+                    </summary>
+                    <div style="margin-top: 1rem; padding: 1rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-secondary);">
                     <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">
                         Authenticate with GitLab to access private question packs from your team's repository.
                     </p>
@@ -117,8 +118,14 @@
                     </details>
                     
                     <div id="gitlab-status" style="margin-top: 1rem; padding: 0.5rem; border-radius: 4px; display: none; font-size: 0.85rem;"></div>
+                    </div>
+                </details>
+                
+                <!-- GitLab Authentication Status Indicator (always visible) -->
+                <div id="gitlab-auth-indicator" style="padding: 0.35rem 0.5rem; border-radius: 4px; background: var(--bg-secondary, #f5f5f5); border: 1px solid var(--border-color, #e0e0e0); font-size: 0.75rem; color: #1a1a1a; display: none; flex-shrink: 0; align-self: flex-start;">
+                    <span id="gitlab-auth-indicator-text">🔓 Not authenticated</span>
                 </div>
-            </details>
+            </div>
         </div>
 
         <!-- Quiz Screen -->

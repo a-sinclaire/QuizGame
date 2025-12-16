@@ -40,10 +40,14 @@ export class QuizEngine {
     
     this.category = category;
     
+    console.log(`[QuizEngine] Starting quiz with category="${category}"`);
+    
     // Get questions from all difficulty levels for the selected category
     const easyQuestions = getQuestions(category, 'easy');
     const mediumQuestions = getQuestions(category, 'medium');
     const hardQuestions = getQuestions(category, 'hard');
+    
+    console.log(`[QuizEngine] Loaded questions - Easy: ${easyQuestions.length}, Medium: ${mediumQuestions.length}, Hard: ${hardQuestions.length}`);
     
     // Combine questions in progression order: easy -> medium -> hard
     let questions = [];
@@ -64,6 +68,7 @@ export class QuizEngine {
     }
     
     if (questions.length === 0) {
+      console.error(`[QuizEngine] No questions found for category: ${category}`);
       throw new Error(`No questions found for category: ${category}`);
     }
     
@@ -75,9 +80,9 @@ export class QuizEngine {
     this.questions = questions;
     this.startTime = Date.now();
     
-    console.log(`Quiz started with ${this.questions.length} questions:`);
+    console.log(`[QuizEngine] Quiz started with ${this.questions.length} questions:`);
     console.log(`  Easy: ${easyQuestions.length}, Medium: ${mediumQuestions.length}, Hard: ${hardQuestions.length}`);
-    console.log('Question order:', this.questions.map(q => `${q.difficulty}-${q.id}`));
+    console.log('[QuizEngine] Question order:', this.questions.map(q => `${q.difficulty}-${q.id}`));
     
     return this.questions.length;
   }
