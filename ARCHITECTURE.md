@@ -26,7 +26,6 @@ A browser-based quiz game designed to run on GitHub Pages, serving as both an as
 ### ❌ Not Yet Implemented
 - [ ] Analytics collection (aggregate user data - GitHub Actions approach)
 - [ ] Scoreboard (opt-in sharing with custom names)
-- [ ] Save/resume incomplete quiz state
 
 ## Project Structure
 
