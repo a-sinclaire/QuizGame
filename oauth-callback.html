@@ -105,17 +105,18 @@
                 
                 // Check for CORS/network errors
                 if (error.message && (error.message.includes('CORS') || error.message.includes('Failed to fetch') || error.message.includes('unknown address space'))) {
-                    errorMessage = '❌ Authentication Failed\n\n' +
-                        'This error typically occurs due to:\n\n' +
-                        '1. **CORS Policy**: GitLab may not allow requests from GitHub Pages\n' +
-                        '2. **Redirect URI Mismatch**: The redirect URI must exactly match what\'s configured in GitLab\n' +
-                        '3. **Network Restrictions**: Your network may be blocking the connection\n\n' +
-                        '**Solutions:**\n' +
-                        '• Verify the redirect URI in GitLab OAuth app settings matches:\n' +
-                        `  ${window.location.origin}${window.location.pathname}\n\n` +
-                        '• Contact your GitLab administrator to enable CORS for your domain\n' +
-                        '• Try using a different network or VPN\n' +
-                        '• Check browser console for more details';
+                    errorMessage = '❌ OAuth Authentication Failed\n\n' +
+                        'GitLab\'s OAuth token endpoint blocks requests from GitHub Pages due to CORS policy.\n\n' +
+                        '**Solution: Use Manual Token Entry Instead**\n\n' +
+                        '1. Click "Try Again" to return to the main page\n' +
+                        '2. Expand "Manual Token Entry" section\n' +
+                        '3. Create a GitLab Personal Access Token:\n' +
+                        '   • Go to GitLab → User Settings → Access Tokens\n' +
+                        '   • Create token with scopes: `api` and `read_repository`\n' +
+                        '   • Copy the token (starts with `glpat-`)\n' +
+                        '4. Paste token in the "Personal Access Token" field\n' +
+                        '5. Click "Load Internal Packs"\n\n' +
+                        'This method works reliably and doesn\'t require OAuth redirects.';
                 } else {
                     errorMessage = `❌ Error: ${errorMessage}`;
                 }

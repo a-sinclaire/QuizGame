@@ -80,9 +80,10 @@
                         🔒 GitLab Authentication (for private question packs)
                     </summary>
                     <div style="margin-top: 1rem; padding: 1rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-secondary);">
-                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">
-                        Authenticate with GitLab to access private question packs from your team's repository.
-                    </p>
+                <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">
+                    Authenticate with GitLab to access private question packs from your team's repository.
+                    <strong>Note:</strong> If OAuth fails due to CORS, use the Manual Token Entry method below instead.
+                </p>
                     
                     <!-- OAuth Authentication -->
                     <div id="gitlab-oauth-section" style="margin-bottom: 1rem;">
@@ -94,9 +95,22 @@
                     </div>
                     
                     <!-- Manual Token Entry (Fallback) -->
-                    <details style="margin-top: 1rem;">
-                        <summary style="cursor: pointer; color: var(--text-secondary); font-size: 0.85rem;">Manual Token Entry (Advanced)</summary>
+                    <details style="margin-top: 1rem;" open>
+                        <summary style="cursor: pointer; color: var(--text-secondary); font-size: 0.85rem; font-weight: 500;">Manual Token Entry (Recommended if OAuth fails)</summary>
                         <div class="gitlab-config" style="margin-top: 1rem;">
+                            <div style="margin-bottom: 1rem; padding: 0.75rem; background: var(--info-bg, #e7f3ff); border: 1px solid var(--info-border, #b3d9ff); border-radius: 4px;">
+                                <p style="margin: 0 0 0.5rem 0; font-size: 0.85rem; color: var(--info-text, #004085);">
+                                    <strong>How to create a GitLab Personal Access Token:</strong>
+                                </p>
+                                <ol style="margin: 0; padding-left: 1.25rem; font-size: 0.85rem; color: var(--info-text, #004085);">
+                                    <li>Go to GitLab → User Settings → Access Tokens (or Preferences → Access Tokens)</li>
+                                    <li>Enter a token name (e.g., "Quiz Game")</li>
+                                    <li>Set expiration date (optional)</li>
+                                    <li>Select scopes: <code>api</code> and <code>read_repository</code></li>
+                                    <li>Click "Create personal access token"</li>
+                                    <li>Copy the token immediately (starts with <code>glpat-</code>)</li>
+                                </ol>
+                            </div>
                             <div style="margin-bottom: 1rem;">
                                 <label for="gitlab-url" style="display: block; margin-bottom: 0.25rem; font-weight: 500; font-size: 0.9rem;">GitLab URL:</label>
                                 <input type="text" id="gitlab-url" placeholder="https://gitlab.cee.redhat.com" value="https://gitlab.cee.redhat.com" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 4px; font-size: 0.9rem;">
@@ -109,7 +123,7 @@
                                 <label for="gitlab-token" style="display: block; margin-bottom: 0.25rem; font-weight: 500; font-size: 0.9rem;">Personal Access Token:</label>
                                 <input type="password" id="gitlab-token" placeholder="glpat-..." style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 4px; font-size: 0.9rem;">
                                 <small style="display: block; margin-top: 0.25rem; color: var(--text-secondary); font-size: 0.8rem;">
-                                    Token requires <code>read_api</code> and <code>read_repository</code> scopes
+                                    Token requires <code>api</code> and <code>read_repository</code> scopes. Paste your token here.
                                 </small>
                             </div>
                             <div style="margin-bottom: 1rem;">
