@@ -456,18 +456,15 @@ class QuizApp {
       const token = document.getElementById('gitlab-token')?.value.trim();
       const packsInput = document.getElementById('gitlab-packs')?.value.trim();
       
-      // Validate inputs
-      if (!gitlabUrl || !repoPath || !token || !packsInput) {
-        this.showGitLabStatus('Please fill in all fields.', 'error');
+      // Validate inputs (packsInput can be empty for auto-discovery)
+      if (!gitlabUrl || !repoPath || !token) {
+        this.showGitLabStatus('Please fill in GitLab URL, Repository Path, and Token.', 'error');
         return;
       }
       
-      // Parse pack files (one per line)
-      const packFiles = packsInput.split('\n').map(f => f.trim()).filter(f => f);
-      if (packFiles.length === 0) {
-        this.showGitLabStatus('Please specify at least one pack file.', 'error');
-        return;
-      }
+      // Parse pack files (one per line) - empty means auto-discover
+      const packFiles = packsInput ? packsInput.split('\n').map(f => f.trim()).filter(f => f) : [];
+      const packFilesToLoad = packFiles.length === 0 ? null : packFiles;
       
       // Disable button and show loading
       loadBtn.disabled = true;
@@ -475,8 +472,16 @@ class QuizApp {
       this.showGitLabStatus('Loading packs from GitLab...', 'info');
       
       try {
-        // Load packs from GitLab
-        await questionPackManager.loadFromGitLab(gitlabUrl, repoPath, token, packFiles);
+        // Load packs from GitLab (packFilesToLoad is null if auto-discovery)
+        await questionPackManager.loadFromGitLab(gitlabUrl, repoPath, token, packFilesToLoad);
+        
+        // If auto-discovery was used, get discovered pack files
+        let finalPackFiles = packFilesToLoad;
+        if (!packFilesToLoad) {
+          finalPackFiles = Array.from(questionPackManager.packMetadata.values())
+            .filter(metadata => metadata.packSource === 'api' && metadata.gitlabFile)
+            .map(metadata => metadata.gitlabFile);
+        }
         
         // Reload cached packs to ensure they're available
         await questionPackManager.loadCachedPacks();
@@ -485,8 +490,11 @@ class QuizApp {
         this.updateCategorySelector();
         
         // Show success
-        const packCount = packFiles.length;
-        this.showGitLabStatus(`✅ Successfully loaded ${packCount} pack(s)! Categories updated.`, 'success');
+        const packCount = finalPackFiles ? finalPackFiles.length : questionPackManager.packMetadata.size;
+        const message = packFilesToLoad
+          ? `✅ Successfully loaded ${packCount} pack(s)! Categories updated.`
+          : `✅ Auto-discovered and loaded ${packCount} pack(s)! Categories updated.`;
+        this.showGitLabStatus(message, 'success');
         
         // Clear token field for security
         document.getElementById('gitlab-token').value = '';
@@ -495,8 +503,13 @@ class QuizApp {
         storageManager.saveGitLabConfig({
           gitlabUrl,
           repoPath,
-          packFiles
+          packFiles: finalPackFiles
         });
+        
+        // Update textarea with discovered files if auto-discovery was used
+        if (!packFilesToLoad && finalPackFiles && finalPackFiles.length > 0) {
+          document.getElementById('gitlab-packs').value = finalPackFiles.join('\n');
+        }
         
       } catch (error) {
         console.error('Error loading GitLab packs:', error);
@@ -509,28 +522,25 @@ class QuizApp {
     
     // Load saved GitLab config (if any)
     const savedConfig = storageManager.getGitLabConfig();
-    const defaultPackFiles = [
-      'packs/app-interface-fundamentals-v1.json',
-      'packs/app-interface-architecture-v1.json',
-      'packs/app-interface-operations-v1.json',
-      'packs/app-interface-advanced-v1.json'
-    ];
     
     if (savedConfig) {
       document.getElementById('gitlab-url').value = savedConfig.gitlabUrl || '';
       document.getElementById('gitlab-repo').value = savedConfig.repoPath || '';
-      // Migrate old pack file to new ones if needed
+      // Clear old pack file reference to trigger auto-discovery
       let packFiles = savedConfig.packFiles || [];
       if (packFiles.includes('packs/internal-basic-v1.json')) {
-        console.log('[setupGitLabLoader] Migrating from old pack file to new app-interface packs');
-        packFiles = defaultPackFiles;
-        savedConfig.packFiles = packFiles;
+        console.log('[setupGitLabLoader] Old pack file detected, clearing to enable auto-discovery');
+        packFiles = [];
+        savedConfig.packFiles = null;
         storageManager.saveGitLabConfig(savedConfig);
       }
-      document.getElementById('gitlab-packs').value = packFiles.length > 0 ? packFiles.join('\n') : defaultPackFiles.join('\n');
+      // Show pack files if manually specified, otherwise leave empty for auto-discovery
+      document.getElementById('gitlab-packs').value = packFiles.length > 0 ? packFiles.join('\n') : '';
+      document.getElementById('gitlab-packs').placeholder = 'Leave empty to auto-discover all .json files in packs/ directory';
     } else {
-      // Set default pack files in textarea if no saved config
-      document.getElementById('gitlab-packs').value = defaultPackFiles.join('\n');
+      // Leave empty for auto-discovery by default
+      document.getElementById('gitlab-packs').value = '';
+      document.getElementById('gitlab-packs').placeholder = 'Leave empty to auto-discover all .json files in packs/ directory';
     }
     
     // Initialize OAuth if configured (moved to end of setupGitLabLoader)
@@ -706,25 +716,20 @@ class QuizApp {
     const savedConfig = storageManager.getGitLabConfig();
     const repoPath = savedConfig?.repoPath || gitlabConfig.defaultRepo || 'amsincla/quiz-packs-private';
     
-    // Default pack files (new app-interface packs)
-    const defaultPackFiles = [
-      'packs/app-interface-fundamentals-v1.json',
-      'packs/app-interface-architecture-v1.json',
-      'packs/app-interface-operations-v1.json',
-      'packs/app-interface-advanced-v1.json'
-    ];
-    
-    // Migrate old pack file to new ones if needed
-    let packFiles = savedConfig?.packFiles || defaultPackFiles;
-    if (packFiles.includes('packs/internal-basic-v1.json')) {
-      console.log('[autoLoadPacks] Migrating from old pack file to new app-interface packs');
-      packFiles = defaultPackFiles;
-      // Update saved config
+    // Use saved pack files, or null to trigger auto-discovery
+    // If saved config has old pack file, clear it to trigger discovery
+    let packFiles = savedConfig?.packFiles;
+    if (packFiles && packFiles.includes('packs/internal-basic-v1.json')) {
+      console.log('[autoLoadPacks] Old pack file detected, clearing to trigger auto-discovery');
+      packFiles = null; // Trigger auto-discovery
       if (savedConfig) {
-        savedConfig.packFiles = defaultPackFiles;
+        savedConfig.packFiles = null;
         storageManager.saveGitLabConfig(savedConfig);
       }
     }
+    
+    // If no pack files specified, will auto-discover from GitLab
+    // Pass null to trigger auto-discovery in loadFromGitLab
     
     console.log('[autoLoadPacks] Starting auto-load for:', { repoPath, packFiles });
     
@@ -740,18 +745,22 @@ class QuizApp {
       
       console.log('[autoLoadPacks] Token available, checking cache...');
       
-      // Check if packs are already cached and loaded
-      const cachedPacks = await storageManager.getCachedPacks();
-      const allPacksCached = packFiles.every(packFile => {
-        // Check if any cached pack matches this file
-        for (const [packId, cached] of Object.entries(cachedPacks)) {
-          if (cached.gitlabFile === packFile || cached.packData?.packId) {
-            const metadata = questionPackManager.getPackMetadata(packId);
-            return metadata && questionPackManager.securePacks.has(packId);
+      // If packFiles is null, we'll discover them, so skip cache check (will discover and load)
+      // Otherwise, check if all specified packs are cached
+      let allPacksCached = false;
+      if (packFiles && Array.isArray(packFiles) && packFiles.length > 0) {
+        const cachedPacks = await storageManager.getCachedPacks();
+        allPacksCached = packFiles.every(packFile => {
+          // Check if any cached pack matches this file
+          for (const [packId, cached] of Object.entries(cachedPacks)) {
+            if (cached.gitlabFile === packFile || cached.packData?.packId) {
+              const metadata = questionPackManager.getPackMetadata(packId);
+              return metadata && questionPackManager.securePacks.has(packId);
+            }
           }
-        }
-        return false;
-      });
+          return false;
+        });
+      }
       
       // If packs are already cached and loaded, skip fetching
       if (allPacksCached) {
@@ -766,13 +775,28 @@ class QuizApp {
       
       // Try to fetch from GitLab (might fail if token expired, but cached packs will still work)
       try {
-        await questionPackManager.loadFromGitLab(
+        const loadedPacks = await questionPackManager.loadFromGitLab(
           gitlabConfig.url,
           repoPath,
           token,
           packFiles
         );
         console.log('[autoLoadPacks] Successfully fetched packs from GitLab');
+        
+        // If auto-discovery was used, save discovered pack files to config
+        if (!packFiles || (Array.isArray(packFiles) && packFiles.length === 0)) {
+          // Get discovered pack files from the loaded packs
+          const discoveredFiles = Array.from(questionPackManager.packMetadata.values())
+            .filter(metadata => metadata.packSource === 'api' && metadata.gitlabFile)
+            .map(metadata => metadata.gitlabFile);
+          
+          if (discoveredFiles.length > 0 && savedConfig) {
+            savedConfig.packFiles = discoveredFiles;
+            storageManager.saveGitLabConfig(savedConfig);
+            console.log('[autoLoadPacks] Saved discovered pack files:', discoveredFiles);
+          }
+        }
+        
         // After successful fetch, reload cached packs to ensure all are properly registered
         await questionPackManager.loadCachedPacks();
         this.updateCategorySelector();

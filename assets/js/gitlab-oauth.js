@@ -76,29 +76,57 @@ class GitLabOAuth {
    * @returns {Promise<string>} Access token
    */
   async exchangeCodeForToken(code, codeVerifier) {
-    const redirectUri = `${window.location.origin}${window.location.pathname}`;
+    // Use the same redirect URI that was used in the authorization request
+    // This should match what's configured in GitLab OAuth app settings
+    // Get from sessionStorage if available (set during auth flow), otherwise construct
+    const redirectUri = sessionStorage.getItem('gitlab_redirect_uri') || 
+                       `${window.location.origin}${window.location.pathname}`;
     
-    const response = await fetch(`${this.gitlabUrl}/oauth/token`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
-      },
-      body: new URLSearchParams({
-        client_id: this.oauthAppId,
-        code: code,
-        grant_type: 'authorization_code',
-        redirect_uri: redirectUri,
-        code_verifier: codeVerifier
-      })
-    });
+    try {
+      const response = await fetch(`${this.gitlabUrl}/oauth/token`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: new URLSearchParams({
+          client_id: this.oauthAppId,
+          code: code,
+          grant_type: 'authorization_code',
+          redirect_uri: redirectUri,
+          code_verifier: codeVerifier
+        })
+      });
 
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`Token exchange failed: ${error}`);
+      if (!response.ok) {
+        const errorText = await response.text();
+        let errorMessage = `Token exchange failed: ${response.status} ${response.statusText}`;
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorMessage = errorJson.error_description || errorJson.error || errorMessage;
+        } catch {
+          errorMessage = `${errorMessage}\n${errorText}`;
+        }
+        throw new Error(errorMessage);
+      }
+
+      const data = await response.json();
+      return data.access_token;
+    } catch (error) {
+      // Check for CORS or network errors
+      if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+        const corsError = new Error(
+          'CORS error: Unable to connect to GitLab. This may be due to:\n' +
+          '1. GitLab CORS settings not allowing requests from GitHub Pages\n' +
+          '2. Network/firewall restrictions\n' +
+          '3. Redirect URI mismatch in GitLab OAuth app configuration\n\n' +
+          `Current redirect URI: ${redirectUri}\n` +
+          'Please ensure this exact URI is registered in your GitLab OAuth application settings.'
+        );
+        corsError.originalError = error;
+        throw corsError;
+      }
+      throw error;
     }
-
-    const data = await response.json();
-    return data.access_token;
   }
 
   /**

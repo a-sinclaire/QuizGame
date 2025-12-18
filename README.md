@@ -77,8 +77,12 @@ To enable secure access to private question packs from GitLab:
    - Create a new application with:
      - Name: Quiz Game
      - Redirect URI: `https://YOUR_USERNAME.github.io/QuizGame/oauth-callback.html`
+       - **IMPORTANT**: The redirect URI must match EXACTLY, including the trailing path
+       - If your repo is at the root: `https://YOUR_USERNAME.github.io/QuizGame/oauth-callback.html`
+       - If using a custom domain, use that domain instead
      - Scopes: `api`, `read_repository` (api scope required for creating issues)
      - Copy the Application ID
+   - **Note**: If you encounter CORS errors, ensure GitLab allows requests from your GitHub Pages domain
 
 2. **Configure the Quiz Game**:
    - Edit `index.html`

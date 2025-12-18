@@ -99,7 +99,32 @@
                 console.error('OAuth callback error:', error);
                 document.querySelector('.spinner').style.display = 'none';
                 statusEl.className = 'error';
-                statusEl.textContent = `Error: ${error.message}`;
+                
+                // Format error message with line breaks
+                let errorMessage = error.message || 'Unknown error occurred';
+                
+                // Check for CORS/network errors
+                if (error.message && (error.message.includes('CORS') || error.message.includes('Failed to fetch') || error.message.includes('unknown address space'))) {
+                    errorMessage = '❌ Authentication Failed\n\n' +
+                        'This error typically occurs due to:\n\n' +
+                        '1. **CORS Policy**: GitLab may not allow requests from GitHub Pages\n' +
+                        '2. **Redirect URI Mismatch**: The redirect URI must exactly match what\'s configured in GitLab\n' +
+                        '3. **Network Restrictions**: Your network may be blocking the connection\n\n' +
+                        '**Solutions:**\n' +
+                        '• Verify the redirect URI in GitLab OAuth app settings matches:\n' +
+                        `  ${window.location.origin}${window.location.pathname}\n\n` +
+                        '• Contact your GitLab administrator to enable CORS for your domain\n' +
+                        '• Try using a different network or VPN\n' +
+                        '• Check browser console for more details';
+                } else {
+                    errorMessage = `❌ Error: ${errorMessage}`;
+                }
+                
+                statusEl.textContent = errorMessage;
+                statusEl.style.whiteSpace = 'pre-wrap';
+                statusEl.style.textAlign = 'left';
+                statusEl.style.maxWidth = '600px';
+                statusEl.style.margin = '0 auto';
                 
                 // Show retry button
                 const retryBtn = document.createElement('button');
@@ -107,7 +132,7 @@
                 retryBtn.onclick = () => {
                     window.location.href = 'index.html';
                 };
-                retryBtn.style.cssText = 'margin-top: 1rem; padding: 0.5rem 1rem; cursor: pointer;';
+                retryBtn.style.cssText = 'margin-top: 1rem; padding: 0.5rem 1rem; cursor: pointer; background: #3498db; color: white; border: none; border-radius: 4px;';
                 document.querySelector('.container').appendChild(retryBtn);
             }
         }

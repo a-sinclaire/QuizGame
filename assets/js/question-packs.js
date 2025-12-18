@@ -96,14 +96,69 @@ class QuestionPackManager {
   }
 
   /**
+   * Discover pack files in GitLab repository by listing files in packs/ directory
+   * @param {string} gitlabUrl - GitLab instance URL
+   * @param {string} repoPath - Repository path
+   * @param {string} token - GitLab access token
+   * @param {string} packsDir - Directory to search (default: 'packs')
+   * @param {string} ref - Git reference (default: 'main')
+   * @returns {Promise<Array<string>>} Array of pack file paths
+   */
+  async discoverPackFiles(gitlabUrl, repoPath, token, packsDir = 'packs', ref = 'main') {
+    try {
+      const encodedRepoPath = encodeURIComponent(repoPath);
+      const encodedPath = encodeURIComponent(packsDir);
+      
+      // GitLab Repository Tree API: list files in directory
+      const treeUrl = `${gitlabUrl}/api/v4/projects/${encodedRepoPath}/repository/tree?path=${encodedPath}&ref=${ref}&recursive=false`;
+      
+      const response = await fetch(treeUrl, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          console.warn(`[discoverPackFiles] Directory ${packsDir} not found, returning empty array`);
+          return [];
+        }
+        throw new Error(`Failed to discover pack files: ${response.status} ${response.statusText}`);
+      }
+
+      const treeData = await response.json();
+      
+      // Filter for JSON files only
+      const packFiles = treeData
+        .filter(item => item.type === 'blob' && item.name.endsWith('.json'))
+        .map(item => `${packsDir}/${item.name}`);
+      
+      console.log(`[discoverPackFiles] Discovered ${packFiles.length} pack files:`, packFiles);
+      return packFiles;
+    } catch (error) {
+      console.error('[discoverPackFiles] Error discovering pack files:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Load a question pack from GitLab private repository
    * @param {string} gitlabUrl - GitLab instance URL (e.g., https://gitlab.cee.redhat.com)
    * @param {string} repoPath - Repository path (e.g., username/repo-name or group/repo-name)
    * @param {string} token - GitLab personal access token
-   * @param {string|Array<string>} packFiles - Path(s) to pack JSON file(s) in repository
+   * @param {string|Array<string>|null} packFiles - Path(s) to pack JSON file(s) in repository. If null/empty, will auto-discover.
    * @returns {Promise<Object|Array<Object>>} Pack data or array of pack data
    */
   async loadFromGitLab(gitlabUrl, repoPath, token, packFiles) {
+    // If packFiles is null, undefined, or empty array, discover pack files automatically
+    if (!packFiles || (Array.isArray(packFiles) && packFiles.length === 0)) {
+      console.log('[loadFromGitLab] No pack files specified, discovering automatically...');
+      packFiles = await this.discoverPackFiles(gitlabUrl, repoPath, token);
+      if (packFiles.length === 0) {
+        throw new Error('No pack files found in packs/ directory');
+      }
+    }
+    
     const files = Array.isArray(packFiles) ? packFiles : [packFiles];
     const loadedPacks = [];
 

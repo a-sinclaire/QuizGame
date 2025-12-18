@@ -114,7 +114,10 @@
                             </div>
                             <div style="margin-bottom: 1rem;">
                                 <label for="gitlab-packs" style="display: block; margin-bottom: 0.25rem; font-weight: 500; font-size: 0.9rem;">Pack Files (one per line):</label>
-                                <textarea id="gitlab-packs" placeholder="packs/app-interface-fundamentals-v1.json&#10;packs/app-interface-architecture-v1.json&#10;packs/app-interface-operations-v1.json&#10;packs/app-interface-advanced-v1.json" rows="5" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 4px; font-family: monospace; font-size: 0.85rem;"></textarea>
+                                <textarea id="gitlab-packs" placeholder="Leave empty to auto-discover all .json files in packs/ directory&#10;&#10;Or specify pack files manually (one per line):&#10;packs/app-interface-fundamentals-v1.json&#10;packs/app-interface-architecture-v1.json" rows="5" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 4px; font-family: monospace; font-size: 0.85rem;"></textarea>
+                                <small style="display: block; margin-top: 0.25rem; color: var(--text-secondary); font-size: 0.8rem;">
+                                    💡 <strong>Tip:</strong> Leave empty to automatically discover and load all quiz packs from the packs/ directory. Or specify files manually for more control.
+                                </small>
                             </div>
                             <button id="load-gitlab-packs-btn" class="action-btn" style="width: 100%; padding: 0.5rem; font-size: 0.9rem;">Load Internal Packs</button>
                         </div>
