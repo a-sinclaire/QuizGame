@@ -509,10 +509,28 @@ class QuizApp {
     
     // Load saved GitLab config (if any)
     const savedConfig = storageManager.getGitLabConfig();
+    const defaultPackFiles = [
+      'packs/app-interface-fundamentals-v1.json',
+      'packs/app-interface-architecture-v1.json',
+      'packs/app-interface-operations-v1.json',
+      'packs/app-interface-advanced-v1.json'
+    ];
+    
     if (savedConfig) {
       document.getElementById('gitlab-url').value = savedConfig.gitlabUrl || '';
       document.getElementById('gitlab-repo').value = savedConfig.repoPath || '';
-      document.getElementById('gitlab-packs').value = savedConfig.packFiles?.join('\n') || '';
+      // Migrate old pack file to new ones if needed
+      let packFiles = savedConfig.packFiles || [];
+      if (packFiles.includes('packs/internal-basic-v1.json')) {
+        console.log('[setupGitLabLoader] Migrating from old pack file to new app-interface packs');
+        packFiles = defaultPackFiles;
+        savedConfig.packFiles = packFiles;
+        storageManager.saveGitLabConfig(savedConfig);
+      }
+      document.getElementById('gitlab-packs').value = packFiles.length > 0 ? packFiles.join('\n') : defaultPackFiles.join('\n');
+    } else {
+      // Set default pack files in textarea if no saved config
+      document.getElementById('gitlab-packs').value = defaultPackFiles.join('\n');
     }
     
     // Initialize OAuth if configured (moved to end of setupGitLabLoader)
@@ -687,7 +705,26 @@ class QuizApp {
     // Get saved repo config or use defaults
     const savedConfig = storageManager.getGitLabConfig();
     const repoPath = savedConfig?.repoPath || gitlabConfig.defaultRepo || 'amsincla/quiz-packs-private';
-    const packFiles = savedConfig?.packFiles || ['packs/internal-basic-v1.json'];
+    
+    // Default pack files (new app-interface packs)
+    const defaultPackFiles = [
+      'packs/app-interface-fundamentals-v1.json',
+      'packs/app-interface-architecture-v1.json',
+      'packs/app-interface-operations-v1.json',
+      'packs/app-interface-advanced-v1.json'
+    ];
+    
+    // Migrate old pack file to new ones if needed
+    let packFiles = savedConfig?.packFiles || defaultPackFiles;
+    if (packFiles.includes('packs/internal-basic-v1.json')) {
+      console.log('[autoLoadPacks] Migrating from old pack file to new app-interface packs');
+      packFiles = defaultPackFiles;
+      // Update saved config
+      if (savedConfig) {
+        savedConfig.packFiles = defaultPackFiles;
+        storageManager.saveGitLabConfig(savedConfig);
+      }
+    }
     
     console.log('[autoLoadPacks] Starting auto-load for:', { repoPath, packFiles });
     
